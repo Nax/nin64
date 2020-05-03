@@ -1,0 +1,41 @@
+#ifndef INCLUDED_CPU_H
+#define INCLUDED_CPU_H
+
+#include <cstdint>
+#include <libnin64/NonCopyable.h>
+
+namespace libnin64
+{
+
+class Bus;
+class CPU : private NonCopyable
+{
+public:
+    CPU(Bus& bus);
+    ~CPU();
+
+    void tick();
+
+private:
+    union Reg
+    {
+        std::uint64_t   u64;
+        std::int64_t    i64;
+        std::uint32_t   u32;
+        std::int32_t    i32;
+        std::uint16_t   u16;
+        std::int16_t    i16;
+        std::uint8_t    u8;
+        std::int8_t     i8;
+    };
+
+    Bus& _bus;
+
+    std::uint64_t   _pc;
+    std::uint64_t   _pcNext;
+    Reg             _regs[32];
+};
+
+}
+
+#endif
