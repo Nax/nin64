@@ -16,19 +16,21 @@ CPU::CPU(Bus& bus)
 , _pcNext{_pc + 4}
 , _regs{}
 {
-
 }
 
 CPU::~CPU()
 {
 }
 
+#include <cstdio>
+
 void CPU::tick()
 {
+    std::printf("PC: 0x%016x\n", _pc);
     std::uint32_t op;
 
-    op = _bus.read32(_pc);
-    _pc = _pcNext
+    op = _bus.read32((std::uint32_t)_pc);
+    _pc = _pcNext;
     _pcNext += 4;
 
     switch (op >> 26)
@@ -38,10 +40,10 @@ void CPU::tick()
     case 001: // REGIMM
         break;
     case 002: // J (Jump)
-        _pcNext = (JUMP_TARGET << 2) | (_pc & 0xfffffffff0000000ULL);
+        _pcNext = ((std::uint64_t)JUMP_TARGET << 2) | (_pc & 0xfffffffff0000000ULL);
         break;
     case 003: // JAL (Jump And Link)
-        _pcNext = (JUMP_TARGET << 2) | (_pc & 0xfffffffff0000000ULL);
+        _pcNext = ((std::uint64_t)JUMP_TARGET << 2) | (_pc & 0xfffffffff0000000ULL);
         _regs[31].u64 = _pc + 4;
         break;
     case 004: // BEQ

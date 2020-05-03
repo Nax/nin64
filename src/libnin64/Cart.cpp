@@ -1,4 +1,3 @@
-#include <cstdio>
 #include <algorithm>
 #include <libnin64/Cart.h>
 #include <libnin64/Util.h>
@@ -11,8 +10,8 @@ inline static constexpr std::uint32_t swapWords(std::uint32_t v)
 }
 
 Cart::Cart()
-    : _data{}
-    , _size{}
+: _data{}
+, _size{}
 {
 
 }
@@ -24,7 +23,7 @@ Cart::~Cart()
 
 void Cart::read(std::uint8_t* dst, std::uint32_t offset, std::uint32_t size)
 {
-    std::copy(dst, _data + offset, _data + offset + size);
+    std::copy(_data + offset, _data + offset + size, dst);
 }
 
 Nin64Err Cart::load(const char* path)
@@ -41,7 +40,9 @@ Nin64Err Cart::load(const char* path)
 
     file = std::fopen(path, "rb");
     if (!file)
+    {
         return NIN64_ERROR_IO;
+    }
 
     /* Detect the correct endianess */
     std::fread(&magic, 4, 1, file);

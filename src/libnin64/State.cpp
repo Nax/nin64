@@ -6,6 +6,7 @@ State::State()
 : cart{}
 , memory{}
 , bus{memory}
+, cpu{bus}
 {
 
 }

@@ -3,6 +3,7 @@
 
 #include <libnin64/Bus.h>
 #include <libnin64/Cart.h>
+#include <libnin64/CPU.h>
 #include <libnin64/Memory.h>
 #include <libnin64/NonCopyable.h>
 
@@ -20,6 +21,7 @@ namespace libnin64
         Cart    cart;
         Memory  memory;
         Bus     bus;
+        CPU     cpu;
     };
 
 }

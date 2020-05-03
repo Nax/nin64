@@ -46,3 +46,13 @@ template <typename T> void Bus::write(std::uint32_t addr, T value)
     else
         return;
 }
+
+template std::uint8_t Bus::read<std::uint8_t>(std::uint32_t);
+template std::uint16_t Bus::read<std::uint16_t>(std::uint32_t);
+template std::uint32_t Bus::read<std::uint32_t>(std::uint32_t);
+template std::uint64_t Bus::read<std::uint64_t>(std::uint32_t);
+
+template void Bus::write<std::uint8_t>(std::uint32_t, std::uint8_t);
+template void Bus::write<std::uint16_t>(std::uint32_t, std::uint16_t);
+template void Bus::write<std::uint32_t>(std::uint32_t, std::uint32_t);
+template void Bus::write<std::uint64_t>(std::uint32_t, std::uint64_t);
