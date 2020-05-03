@@ -3,6 +3,7 @@
 using namespace libnin64;
 
 State::State()
+: memory{}
 {
 
 }

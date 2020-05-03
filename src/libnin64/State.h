@@ -1,6 +1,7 @@
 #ifndef INCLUDED_STATE_H
 #define INCLUDED_STATE_H
 
+#include <libnin64/Memory.h>
 #include <libnin64/NonCopyable.h>
 
 namespace libnin64
@@ -13,7 +14,8 @@ public:
     ~State();
 
     void loadRom(const char* path);
-private:
+
+    Memory memory;
 };
 
 }
