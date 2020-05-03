@@ -3,7 +3,8 @@
 using namespace libnin64;
 
 State::State()
-: memory{}
+    : cart{}
+    , memory{}
 {
 
 }
@@ -13,7 +14,7 @@ State::~State()
 
 }
 
-void State::loadRom(const char* path)
+Nin64Err State::loadRom(const char* path)
 {
-
+    return cart.load(path);
 }

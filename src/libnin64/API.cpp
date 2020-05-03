@@ -5,10 +5,17 @@ using namespace libnin64;
 
 NIN64_API Nin64Err nin64CreateState(Nin64State** dst, const char* romPath)
 {
+    Nin64Err err;
     State* state;
 
     state = new State;
-    state->loadRom(romPath);
+    err = state->loadRom(romPath);
+    if (err)
+    {
+        delete state;
+        *dst = nullptr;
+        return err;
+    }
     *dst = (Nin64State*)state;
 
     return NIN64_OK;
