@@ -3,8 +3,9 @@
 using namespace libnin64;
 
 State::State()
-    : cart{}
-    , memory{}
+: cart{}
+, memory{}
+, bus{memory}
 {
 
 }
@@ -16,5 +17,12 @@ State::~State()
 
 Nin64Err State::loadRom(const char* path)
 {
-    return cart.load(path);
+    Nin64Err err;
+
+    if ((err = cart.load(path)))
+    {
+        return err;
+    }
+    cart.read(memory.spDmem, 0, 0x1000);
+    return NIN64_OK;
 }

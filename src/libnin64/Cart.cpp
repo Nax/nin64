@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <algorithm>
 #include <libnin64/Cart.h>
 #include <libnin64/Util.h>
 
@@ -19,6 +20,11 @@ Cart::Cart()
 Cart::~Cart()
 {
     delete[] _data;
+}
+
+void Cart::read(std::uint8_t* dst, std::uint32_t offset, std::uint32_t size)
+{
+    std::copy(dst, _data + offset, _data + offset + size);
 }
 
 Nin64Err Cart::load(const char* path)

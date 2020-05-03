@@ -8,18 +8,19 @@
 namespace libnin64
 {
 
-class Cart : private NonCopyable
-{
-public:
-    Cart();
-    ~Cart();
+    class Cart : private NonCopyable
+    {
+    public:
+        Cart();
+        ~Cart();
 
-    Nin64Err load(const char* path);
+        void        read(std::uint8_t* dst, std::uint32_t offset, std::uint32_t size);
+        Nin64Err    load(const char* path);
 
-private:
-    std::uint8_t*   _data;
-    std::uint32_t   _size;
-};
+    private:
+        std::uint8_t* _data;
+        std::uint32_t   _size;
+    };
 
 }
 

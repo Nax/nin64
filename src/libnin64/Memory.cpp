@@ -4,6 +4,8 @@ using namespace libnin64;
 
 Memory::Memory()
 : ram{}
+, spDmem{}
+, spImem{}
 {
 }
 
