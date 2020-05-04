@@ -17,6 +17,9 @@ public:
     void tick();
 
 private:
+    std::uint32_t   cop0Read(std::uint8_t reg);
+    void            cop0Write(std::uint8_t reg, std::uint32_t value);
+
     union Reg
     {
         std::uint64_t   u64;
