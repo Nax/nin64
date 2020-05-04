@@ -1,6 +1,7 @@
 #ifndef NIN64_H
 #define NIN64_H
 
+#include <stddef.h>
 #include <nin64/_abi.h>
 
 typedef struct Nin64State Nin64State;

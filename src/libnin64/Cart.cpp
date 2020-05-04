@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstdio>
 #include <libnin64/Cart.h>
 #include <libnin64/Util.h>
 
