@@ -37,6 +37,8 @@ private:
     std::uint64_t   _pc;
     std::uint64_t   _pcNext;
     Reg             _regs[32];
+    Reg             _lo;
+    Reg             _hi;
 };
 
 }

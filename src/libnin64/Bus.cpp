@@ -1,12 +1,79 @@
 #include <cstdio>
+#include <cstdlib>
 #include <libnin64/Bus.h>
 #include <libnin64/Memory.h>
 #include <libnin64/Util.h>
 
 using namespace libnin64;
 
+// https://raw.githubusercontent.com/mikeryan/n64dev/master/docs/n64ops/n64ops%23h.txt
+
+// if (addr <= 0x03EFFFFF) //  RDRAM Memory
+// {
+// }
+// else if (addr <= 0x03FFFFFF) //  RDRAM Registers
+// {
+// }
+// else if (addr <= 0x040FFFFF) //  SP Registers
+// {
+// }
+// else if (addr <= 0x041FFFFF) //  DP Command Registers
+// {
+// }
+// else if (addr <= 0x042FFFFF) //  DP Span Registers
+// {
+// }
+// else if (addr <= 0x043FFFFF) //  MIPS Interface (MI) Registers
+// {
+// }
+// else if (addr <= 0x044FFFFF) //  Video Interface (VI) Registers
+// {
+// }
+// else if (addr <= 0x045FFFFF) //  Audio Interface (AI) Registers
+// {
+// }
+// else if (addr <= 0x046FFFFF) //  Peripheral Interface (PI) Registers
+// {
+// }
+// else if (addr <= 0x047FFFFF) //  RDRAM Interface (RI) Registers
+// {
+// }
+// else if (addr <= 0x048FFFFF) //  Serial Interface (SI) Registers
+// {
+// }
+// else if (addr <= 0x04FFFFFF) //  Unused
+// {
+// }
+// else if (addr <= 0x05FFFFFF) //  Cartridge Domain 2 Address 1
+// {
+// }
+// else if (addr <= 0x07FFFFFF) //  Cartridge Domain 1 Address 1
+// {
+// }
+// else if (addr <= 0x0FFFFFFF) //  Cartridge Domain 2 Address 2
+// {
+// }
+// else if (addr <= 0x1FBFFFFF) //  Cartridge Domain 1 Address 2
+// {
+// }
+// else if (addr <= 0x1FC007BF) //  PIF Boot ROM
+// {
+// }
+// else if (addr <= 0x1FC007FF) //  PIF RAM
+// {
+// }
+// else if (addr <= 0x1FCFFFFF) //  Reserved
+// {
+// }
+// else if (addr <= 0x7FFFFFFF) //  Cartridge Domain 1 Address 3
+// {
+// }
+// else if (addr <= 0xFFFFFFFF) //  External SysAD Device
+// {
+// }
+
 Bus::Bus(Memory& memory)
-    : _memory{ memory }
+: _memory{memory}
 {
 
 }
@@ -18,7 +85,9 @@ template <typename T> T Bus::read(std::uint32_t addr)
     addr &= 0x1fffffff;
 
     if (addr < 0x03f00000)
+    {
         value = *(T*)(_memory.ram + addr);
+    }
     else if (addr < 0x03ffffff)
         value = 0;
     else if (addr < 0x04001000)
@@ -26,7 +95,10 @@ template <typename T> T Bus::read(std::uint32_t addr)
     else if (addr < 0x04002000)
         value = *(T*)(_memory.spImem + (addr & 0xfff));
     else
+    {
         value = 0;
+        std::printf("WARN: Read: Accessing not mapped memory zone: 0x%08x.\n", addr);
+    }
 
     return swap(value);
 }

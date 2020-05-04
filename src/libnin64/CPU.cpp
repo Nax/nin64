@@ -29,7 +29,7 @@
 #define COP0_REG_TAGHI      29
 #define COP0_REG_ERROREPC   30
 
-#define NOT_IMPLEMENTED() { std::printf("Not implemented: OP:%02o %02o %02o %02o %02o %02o\n", (op >> 26), ((op >> 21) & 0x1f), ((op >> 16) & 0x1f), ((op >> 11) & 0x1f), ((op >> 06) & 0x1f), ((op >> 00) & 0x1f)); exit(1); }
+#define NOT_IMPLEMENTED() { std::printf("Not implemented: OP:%02o %02o %02o %02o %02o %02o\n", (op >> 26), ((op >> 21) & 0x1f), ((op >> 16) & 0x1f), ((op >> 11) & 0x1f), ((op >> 06) & 0x1f), ((op >> 00) & 0x3f)); exit(1); }
 
 #define RS              ((std::uint8_t)((op >> 21) & 0x1f))
 #define RT              ((std::uint8_t)((op >> 16) & 0x1f))
@@ -37,7 +37,7 @@
 #define SA              ((std::uint8_t)((op >>  6) & 0x1f))
 #define IMM             ((std::uint16_t)op)
 #define SIMM            ((std::int16_t)op)
-#define JUMP_TARGET     ((std::uint32_t)op & 0x3fffff)
+#define JUMP_TARGET     ((std::uint32_t)op & 0x3ffffff)
 
 using namespace libnin64;
 
@@ -47,6 +47,38 @@ CPU::CPU(Bus& bus)
 , _pcNext{_pc + 4}
 , _regs{}
 {
+    _regs[ 0].u64 = 0;
+    _regs[ 1].u64 = 0x1;
+    _regs[ 2].u64 = 0x0ebda536;
+    _regs[ 3].u64 = 0x0ebda536;
+    _regs[ 4].u64 = 0x0000a536;
+    _regs[ 5].u64 = 0;
+    _regs[ 6].u64 = 0xffffffffa4001f0c;
+    _regs[ 7].u64 = 0xffffffffa4001f08;
+    _regs[ 8].u64 = 0x00000000000000C0;
+    _regs[ 9].u64 = 0x0000000000000000;
+    _regs[10].u64 = 0x0000000000000040;
+    _regs[11].u64 = 0xffffffffa4000040;
+    _regs[12].u64 = 0xffffffffed10d0b3;
+    _regs[13].u64 = 0x000000001402a4cc;
+    _regs[14].u64 = 0x0;
+    _regs[15].u64 = 0x3103e121;
+    _regs[16].u64 = 0x0000000000000000;
+    _regs[17].u64 = 0x0000000000000000;
+    _regs[18].u64 = 0x0000000000000000;
+    _regs[19].u64 = 0x0000000000000000;
+    _regs[20].u64 = 0x1;
+    _regs[21].u64 = 0x0;
+    _regs[22].u64 = 0x3f;
+    _regs[23].u64 = 0x0;
+    _regs[24].u64 = 0x3;
+    _regs[25].u64 = 0xffffffff9debb54f;
+    _regs[26].u64 = 0x0;
+    _regs[27].u64 = 0x0;
+    _regs[28].u64 = 0x0;
+    _regs[29].u64 = 0xa4001ff0;
+    _regs[30].u64 = 0x0;
+    _regs[31].u64 = 0xffffffffa4001550;
 }
 
 CPU::~CPU()
@@ -59,10 +91,12 @@ void CPU::tick()
 {
     std::printf("PC: 0x%016llx\n", _pc);
     std::uint32_t op;
+    std::uint64_t tmp;
 
     // For current tick
     op = _bus.read32((std::uint32_t)_pc);
-    std::printf("OP: 0x%08x\n", op);
+    std::printf("OP: 0x%08x Details:%02o %02o %02o %02o %02o %02o\n", op, (op >> 26), ((op >> 21) & 0x1f), ((op >> 16) & 0x1f), ((op >> 11) & 0x1f), ((op >> 06) & 0x1f), ((op >> 00) & 0x3f));
+    //for (int i = 0; i < 32; ++i) { std::printf("  REG %02d: 0x%016llx\n", i, _regs[i].u64); }
 
     // For next tick
     _pc = _pcNext;
@@ -74,10 +108,10 @@ void CPU::tick()
         switch (op & 0x3f)
         {
         case 000: // SLL (Shift Left Logical)
-            _regs[RD].i64 = (std::int32_t)((_regs[RT].i32 << SA) & 0xffffffff);
+            _regs[RD].i64 = (std::int32_t)((_regs[RT].u32 << SA) & 0xffffffff);
             break;
         case 002: // SRL (Shift Right Logical)
-            NOT_IMPLEMENTED();
+            _regs[RD].i64 = (std::int32_t)((_regs[RT].u32 >> SA) & 0xffffffff);
             break;
         case 003: // SRA (Shift Right Arithmetic)
             NOT_IMPLEMENTED();
@@ -92,10 +126,11 @@ void CPU::tick()
             NOT_IMPLEMENTED();
             break;
         case 010: // JR (Jump Register)
-            NOT_IMPLEMENTED();
+            _pcNext = _regs[RS].u64;
             break;
         case 011: // JALR (Jump And Link Register)
-            NOT_IMPLEMENTED(); 
+            _pcNext = _regs[RS].u64;
+            _regs[RD].u64 = _pc + 4;
             break;
         case 014: // SYSCALL (System Call)
             NOT_IMPLEMENTED();
@@ -107,16 +142,16 @@ void CPU::tick()
             NOT_IMPLEMENTED();
             break;
         case 020: // MFHI (Move From HI)
-            NOT_IMPLEMENTED();
+            _regs[RD].u64 = _hi.u64;
             break;
         case 021: // MTHI (Move To HI)
-            NOT_IMPLEMENTED();
+            _hi.u64 = _regs[RS].u64;
             break;
-        case 022: // MFLO
-            NOT_IMPLEMENTED();
+        case 022: // MFLO (Move From LO)
+            _regs[RD].u64 = _lo.u64;
             break;
-        case 023: // MTLO
-            NOT_IMPLEMENTED();
+        case 023: // MTLO (Move To LO)
+            _lo.u64 = _regs[RS].u64;
             break;
         case 024: // DSLLV (Doubleword Shift Left Logical Variable)
             NOT_IMPLEMENTED();
@@ -127,11 +162,15 @@ void CPU::tick()
         case 027: // DSRAV
             NOT_IMPLEMENTED();
             break;
-        case 030: // MULT
-            NOT_IMPLEMENTED();
+        case 030: // MULT (Multiply)
+            tmp = (std::int64_t)_regs[RS].i32 * _regs[RT].i32;
+            _lo.i64 = (std::int32_t)(tmp & 0xffffffff);
+            _hi.i64 = (std::int32_t)((tmp >> 32) & 0xffffffff);
             break;
-        case 031: // MULTU
-            NOT_IMPLEMENTED();
+        case 031: // MULTU (Multiply Unsigned)
+            tmp = (std::uint64_t)_regs[RS].u32 * _regs[RT].u32;
+            _lo.i64 = (std::int32_t)(tmp & 0xffffffff);
+            _hi.i64 = (std::int32_t)((tmp >> 32) & 0xffffffff);
             break;
         case 032: // DIV
             NOT_IMPLEMENTED();
@@ -151,29 +190,29 @@ void CPU::tick()
         case 037: // DDIVU
             NOT_IMPLEMENTED();
             break;
-        case 040: // ADD
-            NOT_IMPLEMENTED();
+        case 040: // ADD (Add)
+            _regs[RD].i64 = (std::int32_t)(_regs[RS].i64 + _regs[RD].i64);
             break;
-        case 041: // ADDU
-            NOT_IMPLEMENTED();
+        case 041: // ADDU (Add Unsigned)
+            _regs[RD].i64 = (std::int32_t)(_regs[RS].i64 + _regs[RD].i64);
             break;
-        case 042: // SUB
-            NOT_IMPLEMENTED();
+        case 042: // SUB (Subtract)
+            _regs[RD].i64 = (std::int32_t)(_regs[RS].i64 - _regs[RD].i64);
             break;
-        case 043: // SUBU
-            NOT_IMPLEMENTED();
+        case 043: // SUBU (Subtract Unsigned)
+            _regs[RD].i64 = (std::int32_t)(_regs[RS].i64 - _regs[RD].i64);
             break;
         case 044: // AND
-            NOT_IMPLEMENTED();
+            _regs[RD].u64 = _regs[RS].u64 & _regs[RT].u64;
             break;
         case 045: // OR
-            NOT_IMPLEMENTED();
+            _regs[RD].u64 = _regs[RS].u64 | _regs[RT].u64;
             break;
         case 046: // XOR
-            NOT_IMPLEMENTED();
+            _regs[RD].u64 = _regs[RS].u64 ^ _regs[RT].u64;
             break;
         case 047: // NOR
-            NOT_IMPLEMENTED();
+            _regs[RD].u64 = ~(_regs[RS].u64 | _regs[RT].u64);
             break;
         case 052: // SLT
             NOT_IMPLEMENTED();
@@ -263,10 +302,10 @@ void CPU::tick()
         _regs[RT].i64 = (_regs[RS].i32 + SIMM) & 0xffffffff;
         break;
     case 012: // SLTI (Set On Less Than Immediate)
-        NOT_IMPLEMENTED();
+        _regs[RT].u64 = (_regs[RS].i64 < SIMM) ? 1 : 0;
         break;
     case 013: // SLTIU (Set On Less Than Immediate Unsigned)
-        NOT_IMPLEMENTED();
+        _regs[RT].u64 = (_regs[RS].u64 < (std::uint64_t)((std::int64_t)SIMM)) ? 1 : 0;
         break;
     case 014: // ANDI (And Immediate)
         _regs[RT].u64 = _regs[RS].u64 & IMM;
@@ -316,16 +355,16 @@ void CPU::tick()
         NOT_IMPLEMENTED();
         break;
     case 024: // BEQL
-        NOT_IMPLEMENTED();
+        if (_regs[RS].u64 == _regs[RT].u64) { _pcNext = _pc + ((std::int64_t)SIMM << 2); } else { _pc = _pcNext; _pcNext += 4; }
         break;
     case 025: // BNEL
-        NOT_IMPLEMENTED();
+        if (_regs[RS].u64 != _regs[RT].u64) { _pcNext = _pc + ((std::int64_t)SIMM << 2); } else { _pc = _pcNext; _pcNext += 4; }
         break;
     case 026: // BLEZL
-        NOT_IMPLEMENTED();
+        if (_regs[RS].i64 <= 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); } else { _pc = _pcNext; _pcNext += 4; }
         break;
     case 027: // BGTZL (Branch On Greater Than Zero Likely)
-        NOT_IMPLEMENTED();
+        if (_regs[RS].i64 > 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); } else { _pc = _pcNext; _pcNext += 4; }
         break;
     case 030: // DADDI (Doubleword Add Immediate)
         _regs[RT].i64 = _regs[RS].i64 + SIMM;
@@ -389,6 +428,7 @@ void CPU::tick()
         break;
     case 060: // LL (Load Linked)
         _regs[RT].i64 = (std::int32_t)_bus.read32(_regs[RS].u32 + SIMM);
+        NOT_IMPLEMENTED();
         // TODO: More shit...
         break;
     case 061: // LWC1
