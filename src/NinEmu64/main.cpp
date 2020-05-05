@@ -34,7 +34,7 @@ int main(int argc, char **argv)
     }
     for (;;)
     {
-        nin64RunCycles(state, 1024);
+        nin64RunCycles(state, 1024 * 1024);
     }
     nin64DestroyState(state);
 

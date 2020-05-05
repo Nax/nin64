@@ -11,7 +11,8 @@ inline static constexpr std::uint32_t swapWords(std::uint32_t v)
 }
 
 Cart::Cart()
-: _data{}, _size{}
+: _data{}
+, _size{}
 {
 }
 

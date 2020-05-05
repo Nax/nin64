@@ -1,6 +1,7 @@
 #ifndef INCLUDED_CPU_H
 #define INCLUDED_CPU_H
 
+#include <cstddef>
 #include <cstdint>
 #include <libnin64/NonCopyable.h>
 
@@ -14,6 +15,7 @@ public:
     CPU(Bus& bus);
     ~CPU();
 
+    void tick(std::size_t count);
     void tick();
 
 private:

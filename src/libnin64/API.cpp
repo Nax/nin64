@@ -29,9 +29,6 @@ NIN64_API Nin64Err nin64DestroyState(Nin64State* state)
 
 NIN64_API Nin64Err nin64RunCycles(Nin64State* state, size_t count)
 {
-    for (size_t i = 0; i < count; ++i)
-    {
-        state->cpu.tick();
-    }
+    state->cpu.tick(count);
     return NIN64_OK;
 }

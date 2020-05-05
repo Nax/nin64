@@ -29,7 +29,7 @@
 #define COP0_REG_TAGHI      29
 #define COP0_REG_ERROREPC   30
 
-#define NOT_IMPLEMENTED() { std::printf("Not implemented: OP:%02o %02o %02o %02o %02o %02o\n", (op >> 26), ((op >> 21) & 0x1f), ((op >> 16) & 0x1f), ((op >> 11) & 0x1f), ((op >> 06) & 0x1f), ((op >> 00) & 0x3f)); exit(1); }
+#define NOT_IMPLEMENTED() { std::printf("PC: 0x%016llx Not implemented: OP:%02o %02o %02o %02o %02o %02o\n", _pc, (op >> 26), ((op >> 21) & 0x1f), ((op >> 16) & 0x1f), ((op >> 11) & 0x1f), ((op >> 06) & 0x1f), ((op >> 00) & 0x3f)); exit(1); }
 
 #define RS              ((std::uint8_t)((op >> 21) & 0x1f))
 #define RT              ((std::uint8_t)((op >> 16) & 0x1f))
@@ -87,15 +87,24 @@ CPU::~CPU()
 
 #include <cstdio>
 
+void CPU::tick(std::size_t count)
+{
+    while (count--)
+    {
+        tick();
+    }
+    std::printf("PC: %016llx\n", _pc);
+}
+
 void CPU::tick()
 {
-    std::printf("PC: 0x%016llx\n", _pc);
+    //std::printf("PC: 0x%016llx\n", _pc);
     std::uint32_t op;
     std::uint64_t tmp;
 
     // For current tick
     op = _bus.read32((std::uint32_t)_pc);
-    std::printf("OP: 0x%08x Details:%02o %02o %02o %02o %02o %02o\n", op, (op >> 26), ((op >> 21) & 0x1f), ((op >> 16) & 0x1f), ((op >> 11) & 0x1f), ((op >> 06) & 0x1f), ((op >> 00) & 0x3f));
+    //std::printf("OP: 0x%08x Details:%02o %02o %02o %02o %02o %02o\n", op, (op >> 26), ((op >> 21) & 0x1f), ((op >> 16) & 0x1f), ((op >> 11) & 0x1f), ((op >> 06) & 0x1f), ((op >> 00) & 0x3f));
     //for (int i = 0; i < 32; ++i) { std::printf("  REG %02d: 0x%016llx\n", i, _regs[i].u64); }
 
     // For next tick
@@ -117,10 +126,10 @@ void CPU::tick()
             NOT_IMPLEMENTED();
             break;
         case 004: // SLLV (Shift Left Logical Variable)
-            NOT_IMPLEMENTED();
+            _regs[RD].i64 = (std::int32_t)((_regs[RT].u32 << (_regs[RS].u8 & 0x1f)) & 0xffffffff);
             break;
         case 006: // SRLV (Shift Right Logical Variable)
-            NOT_IMPLEMENTED();
+            _regs[RD].i64 = (std::int32_t)((_regs[RT].u32 >> (_regs[RS].u8 & 0x1f)) & 0xffffffff);
             break;
         case 007: // SRAV (Shift Right Arithmetic Variable)
             NOT_IMPLEMENTED();
@@ -214,11 +223,11 @@ void CPU::tick()
         case 047: // NOR
             _regs[RD].u64 = ~(_regs[RS].u64 | _regs[RT].u64);
             break;
-        case 052: // SLT
-            NOT_IMPLEMENTED();
+        case 052: // SLT (Set On Less Than)
+            _regs[RD].u64 = !!(_regs[RS].i64 < _regs[RT].i64);
             break;
-        case 053: // SLTU
-            NOT_IMPLEMENTED();
+        case 053: // SLTU (Set On Less Than Unsigned)
+            _regs[RD].u64 = !!(_regs[RS].u64 < _regs[RT].u64);
             break;
         case 054: // DADD
             NOT_IMPLEMENTED();
@@ -274,7 +283,58 @@ void CPU::tick()
         }
         break;
     case 001: // REGIMM
-        NOT_IMPLEMENTED();
+        switch (RT)
+        {
+        case 000: // BLTZ
+            if (_regs[RS].i64 < 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); }
+            break;
+        case 001: // BGEZ
+            if (_regs[RS].i64 >= 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); }
+            break;
+        case 002: // BLTZL
+            if (_regs[RS].i64 < 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); } else { _pc = _pcNext; _pcNext += 4; }
+            break;
+        case 003: // BGEZL (Branch On Greater Than Or Equal To Zero Likely)
+            if (_regs[RS].i64 >= 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); } else { _pc = _pcNext; _pcNext += 4; }
+            break;
+        case 010: // TGEI
+            NOT_IMPLEMENTED();
+            break;
+        case 011: // TGEIU
+            NOT_IMPLEMENTED();
+            break;
+        case 012: // TLTI
+            NOT_IMPLEMENTED();
+            break;
+        case 013: // TLTIU
+            NOT_IMPLEMENTED();
+            break;
+        case 014: // TEQI
+            NOT_IMPLEMENTED();
+            break;
+        case 016: // TNEI
+            NOT_IMPLEMENTED();
+            break;
+        case 020: // BLTZAL (Branch On Less Than Zero And Link Likely)
+            _regs[31].u64 = _pc + 4;
+            if (_regs[RS].i64 < 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); }
+            break;
+        case 021: // BGEZAL (Branch On Greater Than Or Equal To Zero And Link Likely)
+            _regs[31].u64 = _pc + 4;
+            if (_regs[RS].i64 >= 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); }
+            break;
+        case 022: // BLTZALL
+            _regs[31].u64 = _pc + 4;
+            if (_regs[RS].i64 < 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); } else { _pc = _pcNext; _pcNext += 4; }
+            break;
+        case 023: // BGEZALL
+            _regs[31].u64 = _pc + 4;
+            if (_regs[RS].i64 >= 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); } else { _pc = _pcNext; _pcNext += 4; }
+            break;
+        default:
+            NOT_IMPLEMENTED();
+            break;
+        }
         break;
     case 002: // J (Jump)
         _pcNext = ((std::uint64_t)JUMP_TARGET << 2) | (_pc & 0xfffffffff0000000ULL);
@@ -424,7 +484,6 @@ void CPU::tick()
         NOT_IMPLEMENTED();
         break;
     case 057: // CACHE
-        NOT_IMPLEMENTED();
         break;
     case 060: // LL (Load Linked)
         _regs[RT].i64 = (std::int32_t)_bus.read32(_regs[RS].u32 + SIMM);
