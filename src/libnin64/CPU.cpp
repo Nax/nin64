@@ -46,6 +46,8 @@ CPU::CPU(Bus& bus)
 , _pc{0xffffffffa4000040ull}
 , _pcNext{_pc + 4}
 , _regs{}
+, _llAddr{}
+, _llBit{}
 {
     _regs[ 0].u64 = 0;
     _regs[ 1].u64 = 0x1;
@@ -101,6 +103,7 @@ void CPU::tick()
     //std::printf("PC: 0x%016llx\n", _pc);
     std::uint32_t op;
     std::uint64_t tmp;
+    std::uint64_t tmp2;
 
     // For current tick
     op = _bus.read32((std::uint32_t)_pc);
@@ -432,11 +435,40 @@ void CPU::tick()
     case 031: // DADDIU (Doubleword Add Immediate Unsigned)
         _regs[RT].i64 = _regs[RS].i64 + SIMM;
         break;
-    case 032: // LDL
+    case 032: // LDL (Load Doubleword Left)
         NOT_IMPLEMENTED();
         break;
-    case 033: // LDR
-        NOT_IMPLEMENTED();
+    case 033: // LDR (Load Doubleword Right)
+        tmp = _regs[RS].u64 + SIMM;
+        tmp2 = _bus.read64(tmp & 0xfffffff8); // Mask the offset
+        switch (tmp & 0x7)
+        {
+        case 0x0:
+            tmp = (tmp2 >> 56) | (_regs[RT].u64 & 0xffffffffffffff00ull);
+            break;
+        case 0x1:
+            tmp = (tmp2 >> 48) | (_regs[RT].u64 & 0xffffffffffff0000ull);
+            break;
+        case 0x2:
+            tmp = (tmp2 >> 40) | (_regs[RT].u64 & 0xffffffffff000000ull);
+            break;
+        case 0x3:
+            tmp = (tmp2 >> 32) | (_regs[RT].u64 & 0xffffffff00000000ull);
+            break;
+        case 0x4:
+            tmp = (tmp2 >> 24) | (_regs[RT].u64 & 0xffffff0000000000ull);
+            break;
+        case 0x5:
+            tmp = (tmp2 >> 16) | (_regs[RT].u64 & 0xffff000000000000ull);
+            break;
+        case 0x6:
+            tmp = (tmp2 >>  8) | (_regs[RT].u64 & 0xff00000000000000ull);
+            break;
+        case 0x7:
+            tmp = tmp2;
+            break;
+        }
+        _regs[RT].u64 = tmp;
         break;
     case 040: // LB (Load Byte)
         _regs[RT].i64 = (std::int8_t)_bus.read8(_regs[RS].u32 + SIMM);
@@ -444,7 +476,7 @@ void CPU::tick()
     case 041: // LH (Load Halfword)
         _regs[RT].i64 = (std::int16_t)_bus.read16(_regs[RS].u32 + SIMM);
         break;
-    case 042: // LWL
+    case 042: // LWL (Load Word Left)
         NOT_IMPLEMENTED();
         break;
     case 043: // LW (Load Word)
@@ -478,7 +510,35 @@ void CPU::tick()
         NOT_IMPLEMENTED();
         break;
     case 055: // SDR (Store Doubleword Right)
-        NOT_IMPLEMENTED();
+        tmp = _regs[RS].u64 + SIMM;
+        tmp2 = _bus.read64(tmp & 0xfffffff8); // Mask the offset
+        switch (tmp & 0x7)
+        {
+        case 0x0:
+            _bus.write64((tmp & 0xfffffff8), (_regs[RT].u64 << 56) | (tmp2 & 0x00ffffffffffffffull));
+            break;
+        case 0x1:
+            _bus.write64((tmp & 0xfffffff8), (_regs[RT].u64 << 48) | (tmp2 & 0x0000ffffffffffffull));
+            break;
+        case 0x2:
+            _bus.write64((tmp & 0xfffffff8), (_regs[RT].u64 << 40) | (tmp2 & 0x000000ffffffffffull));
+            break;
+        case 0x3:
+            _bus.write64((tmp & 0xfffffff8), (_regs[RT].u64 << 32) | (tmp2 & 0x00000000ffffffffull));
+            break;
+        case 0x4:
+            _bus.write64((tmp & 0xfffffff8), (_regs[RT].u64 << 24) | (tmp2 & 0x0000000000ffffffull));
+            break;
+        case 0x5:
+            _bus.write64((tmp & 0xfffffff8), (_regs[RT].u64 << 16) | (tmp2 & 0x000000000000ffffull));
+            break;
+        case 0x6:
+            _bus.write64((tmp & 0xfffffff8), (_regs[RT].u64 <<  8) | (tmp2 & 0x00000000000000ffull));
+            break;
+        case 0x7:
+            _bus.write64((tmp & 0xfffffff8), _regs[RT].u64);
+            break;
+        }
         break;
     case 056: // SWR (Store Word Right)
         NOT_IMPLEMENTED();
@@ -486,9 +546,10 @@ void CPU::tick()
     case 057: // CACHE
         break;
     case 060: // LL (Load Linked)
-        _regs[RT].i64 = (std::int32_t)_bus.read32(_regs[RS].u32 + SIMM);
-        NOT_IMPLEMENTED();
-        // TODO: More shit...
+        tmp = _regs[RS].u32 + SIMM;
+        _regs[RT].i64 = (std::int32_t)_bus.read32(tmp);
+        _llAddr = tmp;
+        _llBit = true;
         break;
     case 061: // LWC1
         NOT_IMPLEMENTED();
@@ -541,10 +602,120 @@ std::uint32_t CPU::cop0Read(std::uint8_t reg)
 {
     std::uint32_t value{};
 
+    switch (reg)
+    {
+    case COP0_REG_INDEX:
+        break;
+    case COP0_REG_RANDOM:
+        break;
+    case COP0_REG_ENTRYLO0:
+        break;
+    case COP0_REG_ENTRYLO1:
+        break;
+    case COP0_REG_CONTEXT:
+        break;
+    case COP0_REG_PAGEMASK:
+        break;
+    case COP0_REG_WIRED:
+        break;
+    case COP0_REG_BADVADDR:
+        break;
+    case COP0_REG_COUNT:
+        break;
+    case COP0_REG_ENTRYHI:
+        break;
+    case COP0_REG_COMPARE:
+        break;
+    case COP0_REG_SR:
+        break;
+    case COP0_REG_CAUSE:
+        break;
+    case COP0_REG_EPC:
+        break;
+    case COP0_REG_PRID:
+        break;
+    case COP0_REG_CONFIG:
+        break;
+    case COP0_REG_LLADDR:
+        value = _llAddr;
+        break;
+    case COP0_REG_WATCHLO:
+        break;
+    case COP0_REG_WATCHHI:
+        break;
+    case COP0_REG_XCONTEXT:
+        break;
+    case COP0_REG_PERR:
+        break;
+    case COP0_REG_CACHEERR:
+        break;
+    case COP0_REG_TAGLO:
+        break;
+    case COP0_REG_TAGHI:
+        break;
+    case COP0_REG_ERROREPC:
+        break;
+    default:
+        break;
+    }
+
     return value;
 }
 
 void CPU::cop0Write(std::uint8_t reg, std::uint32_t value)
 {
-
+    switch (reg)
+    {
+    case COP0_REG_INDEX:
+        break;
+    case COP0_REG_RANDOM:
+        break;
+    case COP0_REG_ENTRYLO0:
+        break;
+    case COP0_REG_ENTRYLO1:
+        break;
+    case COP0_REG_CONTEXT:
+        break;
+    case COP0_REG_PAGEMASK:
+        break;
+    case COP0_REG_WIRED:
+        break;
+    case COP0_REG_BADVADDR:
+        break;
+    case COP0_REG_COUNT:
+        break;
+    case COP0_REG_ENTRYHI:
+        break;
+    case COP0_REG_COMPARE:
+        break;
+    case COP0_REG_SR:
+        break;
+    case COP0_REG_CAUSE:
+        break;
+    case COP0_REG_EPC:
+        break;
+    case COP0_REG_PRID:
+        break;
+    case COP0_REG_CONFIG:
+        break;
+    case COP0_REG_LLADDR:
+        _llAddr = value;
+        break;
+    case COP0_REG_WATCHLO:
+        break;
+    case COP0_REG_WATCHHI:
+        break;
+    case COP0_REG_XCONTEXT:
+        break;
+    case COP0_REG_PERR:
+        break;
+    case COP0_REG_CACHEERR:
+        break;
+    case COP0_REG_TAGLO:
+        break;
+    case COP0_REG_TAGHI:
+        break;
+    case COP0_REG_ERROREPC:
+        break;
+    }
 }

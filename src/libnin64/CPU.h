@@ -41,6 +41,8 @@ private:
     Reg             _regs[32];
     Reg             _lo;
     Reg             _hi;
+    std::uint32_t   _llAddr;
+    bool            _llBit:1;
 };
 
 }
