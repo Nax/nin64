@@ -8,10 +8,11 @@ namespace libnin64
 {
 
 class Memory;
+class PeripheralInterface;
 class Bus : private NonCopyable
 {
 public:
-    Bus(Memory& memory);
+    Bus(Memory& memory, PeripheralInterface& pi);
 
     template <typename T> T     read(std::uint32_t addr);
     template <typename T> void  write(std::uint32_t addr, T value);
@@ -27,7 +28,8 @@ public:
     void write64(std::uint32_t addr, std::uint64_t value) { write<std::uint64_t>(addr, value); }
 
 private:
-    Memory& _memory;
+    Memory&                 _memory;
+    PeripheralInterface&    _pi;
 };
 
 }

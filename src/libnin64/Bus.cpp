@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <libnin64/Bus.h>
 #include <libnin64/Memory.h>
+#include <libnin64/PeripheralInterface.h>
 #include <libnin64/Util.h>
 
 using namespace libnin64;
@@ -72,8 +73,9 @@ using namespace libnin64;
 // {
 // }
 
-Bus::Bus(Memory& memory)
+Bus::Bus(Memory& memory, PeripheralInterface& pi)
 : _memory{memory}
+, _pi{pi}
 {
 
 }
@@ -94,6 +96,8 @@ template <typename T> T Bus::read(std::uint32_t addr)
         value = *(T*)(_memory.spDmem + (addr & 0xfff));
     else if (addr < 0x04002000)
         value = *(T*)(_memory.spImem + (addr & 0xfff));
+    else if (addr >= 0x04600000 && addr <= 0x046fffff) //  Peripheral Interface (PI) Registers
+        value = T(_pi.read(addr));
     else
     {
         value = 0;
@@ -116,6 +120,8 @@ template <typename T> void Bus::write(std::uint32_t addr, T value)
         *(T*)(_memory.spDmem + (addr & 0xfff)) = value;
     else if (addr < 0x04002000)
         *(T*)(_memory.spImem + (addr & 0xfff)) = value;
+    else if (addr >= 0x04600000 && addr <= 0x046fffff) //  Peripheral Interface (PI) Registers
+        _pi.write(addr, (std::uint32_t)value);
     else
     {
         std::printf("WARN: Write: Accessing not mapped memory zone: 0x%08x.\n", addr);

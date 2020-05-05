@@ -6,6 +6,7 @@
 #include <libnin64/CPU.h>
 #include <libnin64/Memory.h>
 #include <libnin64/NonCopyable.h>
+#include <libnin64/PeripheralInterface.h>
 
 namespace libnin64
 {
@@ -18,10 +19,11 @@ namespace libnin64
 
         Nin64Err loadRom(const char* path);
 
-        Cart    cart;
-        Memory  memory;
-        Bus     bus;
-        CPU     cpu;
+        Cart                cart;
+        Memory              memory;
+        PeripheralInterface pi;
+        Bus                 bus;
+        CPU                 cpu;
     };
 
 }

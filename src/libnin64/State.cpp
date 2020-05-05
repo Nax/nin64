@@ -5,7 +5,8 @@ using namespace libnin64;
 State::State()
 : cart{}
 , memory{}
-, bus{memory}
+, pi{memory, cart}
+, bus{memory, pi}
 , cpu{bus}
 {
 
