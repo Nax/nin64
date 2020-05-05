@@ -7,14 +7,12 @@ using namespace libnin64;
 
 inline static constexpr std::uint32_t swapWords(std::uint32_t v)
 {
-    return (v << 16) | (v >> 16);
+    return swap16(v & 0xffff) | (swap16(v >> 16) << 16);
 }
 
 Cart::Cart()
-: _data{}
-, _size{}
+: _data{}, _size{}
 {
-
 }
 
 Cart::~Cart()
@@ -22,14 +20,14 @@ Cart::~Cart()
     delete[] _data;
 }
 
-void Cart::read(std::uint8_t* dst, std::uint32_t offset, std::uint32_t size)
+void Cart::read(std::uint8_t *dst, std::uint32_t offset, std::uint32_t size)
 {
     std::copy(_data + offset, _data + offset + size, dst);
 }
 
-Nin64Err Cart::load(const char* path)
+Nin64Err Cart::load(const char *path)
 {
-    std::FILE* file;
+    std::FILE *file;
     std::uint32_t magic{};
     bool byteSwap;
     bool wordSwap;
@@ -56,13 +54,13 @@ Nin64Err Cart::load(const char* path)
         break;
     case 0x37:
         /* Little-Endian ROM */
-        byteSwap = true;
-        wordSwap = false;
+        byteSwap = false;
+        wordSwap = true;
         break;
     case 0x40:
         /* Middle-Endian ROM */
-        byteSwap = false;
-        wordSwap = true;
+        byteSwap = true;
+        wordSwap = false;
         break;
     case 0x12:
         /* Alternative Middle-Endian ROM - very rare */
@@ -75,8 +73,14 @@ Nin64Err Cart::load(const char* path)
     }
 
     /* Fix up the magic */
-    if (byteSwap) { magic = swap32(magic); }
-    if (wordSwap) { magic = swapWords(magic); }
+    if (byteSwap)
+    {
+        magic = swap32(magic);
+    }
+    if (wordSwap)
+    {
+        magic = swapWords(magic);
+    }
 
     /* Check the fixed up magic */
     if (magic != 0x40123780)
@@ -100,7 +104,7 @@ Nin64Err Cart::load(const char* path)
     {
         for (std::uint32_t i = 0; i < _size / 4; ++i)
         {
-            ((std::uint32_t*)_data)[i] = swap32(((std::uint32_t*)_data)[i]);
+            ((std::uint32_t *)_data)[i] = swap32(((std::uint32_t *)_data)[i]);
         }
     }
 
@@ -109,7 +113,7 @@ Nin64Err Cart::load(const char* path)
     {
         for (std::uint32_t i = 0; i < _size / 4; ++i)
         {
-            ((std::uint32_t*)_data)[i] = swapWords(((std::uint32_t*)_data)[i]);
+            ((std::uint32_t *)_data)[i] = swapWords(((std::uint32_t *)_data)[i]);
         }
     }
 
