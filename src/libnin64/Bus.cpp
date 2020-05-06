@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <libnin64/Bus.h>
+#include <libnin64/Cart.h>
 #include <libnin64/Memory.h>
 #include <libnin64/PeripheralInterface.h>
 #include <libnin64/Util.h>
@@ -73,11 +74,11 @@ using namespace libnin64;
 // {
 // }
 
-Bus::Bus(Memory& memory, PeripheralInterface& pi)
+Bus::Bus(Memory& memory, Cart& cart, PeripheralInterface& pi)
 : _memory{memory}
+, _cart{cart}
 , _pi{pi}
 {
-
 }
 
 template <typename T> T Bus::read(std::uint32_t addr)
@@ -88,38 +89,42 @@ template <typename T> T Bus::read(std::uint32_t addr)
 
     if (addr < 0x03f00000)
     {
-        value = *(T*)(_memory.ram + addr);
+        value = swap(*(T*)(_memory.ram + addr));
     }
     else if (addr < 0x03ffffff)
         value = 0;
     else if (addr < 0x04001000)
-        value = *(T*)(_memory.spDmem + (addr & 0xfff));
+        value = swap(*(T*)(_memory.spDmem + (addr & 0xfff)));
     else if (addr < 0x04002000)
-        value = *(T*)(_memory.spImem + (addr & 0xfff));
-    else if (addr >= 0x04600000 && addr <= 0x046fffff) //  Peripheral Interface (PI) Registers
+        value = swap(*(T*)(_memory.spImem + (addr & 0xfff)));
+    else if (addr >= 0x04600000 && addr <= 0x046fffff) // Peripheral Interface (PI) Registers
         value = T(_pi.read(addr));
+    else if (addr >= 0x10000000 && addr <= 0x1fbfffff) // Cart Domain 1 Address 2
+    {
+        _cart.read((std::uint8_t*)&value, addr - 0x10000000, sizeof(T));
+        value = swap(value);
+    }
     else
     {
         value = 0;
         std::printf("WARN: Read: Accessing not mapped memory zone: 0x%08x.\n", addr);
     }
 
-    return swap(value);
+    return value;
 }
 
 template <typename T> void Bus::write(std::uint32_t addr, T value)
 {
     addr &= 0x1fffffff;
-    value = swap(value);
 
     if (addr < 0x03f00000)
-        *(T*)(_memory.ram + addr) = value;
+        *(T*)(_memory.ram + addr) = swap(value);
     else if (addr < 0x03ffffff)
         return;
     else if (addr < 0x04001000)
-        *(T*)(_memory.spDmem + (addr & 0xfff)) = value;
+        *(T*)(_memory.spDmem + (addr & 0xfff)) = swap(value);
     else if (addr < 0x04002000)
-        *(T*)(_memory.spImem + (addr & 0xfff)) = value;
+        *(T*)(_memory.spImem + (addr & 0xfff)) = swap(value);
     else if (addr >= 0x04600000 && addr <= 0x046fffff) //  Peripheral Interface (PI) Registers
         _pi.write(addr, (std::uint32_t)value);
     else
@@ -129,7 +134,7 @@ template <typename T> void Bus::write(std::uint32_t addr, T value)
     }
 }
 
-template std::uint8_t Bus::read<std::uint8_t>(std::uint32_t);
+template std::uint8_t  Bus::read<std::uint8_t>(std::uint32_t);
 template std::uint16_t Bus::read<std::uint16_t>(std::uint32_t);
 template std::uint32_t Bus::read<std::uint32_t>(std::uint32_t);
 template std::uint64_t Bus::read<std::uint64_t>(std::uint32_t);

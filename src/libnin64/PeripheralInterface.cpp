@@ -104,7 +104,7 @@ void PeripheralInterface::write(std::uint32_t reg, std::uint32_t value)
     case PI_WR_LEN_REG:
         std::puts("WRITE :: PI_WR_LEN_REG");
         std::printf("0x%08x 0x%08x 0x%08x\n", _dramAddr, _cartAddr, value);
-        _cart.read(_memory.ram + _dramAddr, _cartAddr, value & 0xffffff);
+        _cart.read(_memory.ram + _dramAddr, _cartAddr & 0x0fffffff, (value & 0xffffff) + 1);
         break;
     case PI_STATUS_REG:
         std::puts("WRITE :: PI_STATUS_REG");

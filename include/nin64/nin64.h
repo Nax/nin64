@@ -1,16 +1,16 @@
 #ifndef NIN64_H
 #define NIN64_H
 
-#include <stddef.h>
 #include <nin64/_abi.h>
+#include <stddef.h>
 
 typedef struct Nin64State Nin64State;
 typedef enum
 {
-    NIN64_OK                    = 0,
-    NIN64_ERROR_OUTOFMEMORY     = 1,
-    NIN64_ERROR_IO              = 2,
-    NIN64_ERROR_BADROM          = 3
+    NIN64_OK                = 0,
+    NIN64_ERROR_OUTOFMEMORY = 1,
+    NIN64_ERROR_IO          = 2,
+    NIN64_ERROR_BADROM      = 3
 } Nin64Err;
 
 NIN64_API Nin64Err nin64CreateState(Nin64State** dst, const char* romPath);

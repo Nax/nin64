@@ -3,41 +3,53 @@
 #include <libnin64/Bus.h>
 #include <libnin64/CPU.h>
 
-#define COP0_REG_INDEX      0
-#define COP0_REG_RANDOM     1
-#define COP0_REG_ENTRYLO0   2
-#define COP0_REG_ENTRYLO1   3
-#define COP0_REG_CONTEXT    4
-#define COP0_REG_PAGEMASK   5
-#define COP0_REG_WIRED      6
-#define COP0_REG_BADVADDR   8
-#define COP0_REG_COUNT      9
-#define COP0_REG_ENTRYHI    10
-#define COP0_REG_COMPARE    11
-#define COP0_REG_SR         12
-#define COP0_REG_CAUSE      13
-#define COP0_REG_EPC        14
-#define COP0_REG_PRID       15
-#define COP0_REG_CONFIG     16
-#define COP0_REG_LLADDR     17
-#define COP0_REG_WATCHLO    18
-#define COP0_REG_WATCHHI    19
-#define COP0_REG_XCONTEXT   20
-#define COP0_REG_PERR       26
-#define COP0_REG_CACHEERR   27
-#define COP0_REG_TAGLO      28
-#define COP0_REG_TAGHI      29
-#define COP0_REG_ERROREPC   30
+#define COP0_REG_INDEX 0
+#define COP0_REG_RANDOM 1
+#define COP0_REG_ENTRYLO0 2
+#define COP0_REG_ENTRYLO1 3
+#define COP0_REG_CONTEXT 4
+#define COP0_REG_PAGEMASK 5
+#define COP0_REG_WIRED 6
+#define COP0_REG_BADVADDR 8
+#define COP0_REG_COUNT 9
+#define COP0_REG_ENTRYHI 10
+#define COP0_REG_COMPARE 11
+#define COP0_REG_SR 12
+#define COP0_REG_CAUSE 13
+#define COP0_REG_EPC 14
+#define COP0_REG_PRID 15
+#define COP0_REG_CONFIG 16
+#define COP0_REG_LLADDR 17
+#define COP0_REG_WATCHLO 18
+#define COP0_REG_WATCHHI 19
+#define COP0_REG_XCONTEXT 20
+#define COP0_REG_PERR 26
+#define COP0_REG_CACHEERR 27
+#define COP0_REG_TAGLO 28
+#define COP0_REG_TAGHI 29
+#define COP0_REG_ERROREPC 30
 
-#define NOT_IMPLEMENTED() { std::printf("PC: 0x%016llx Not implemented: OP:%02o %02o %02o %02o %02o %02o\n", _pc, (op >> 26), ((op >> 21) & 0x1f), ((op >> 16) & 0x1f), ((op >> 11) & 0x1f), ((op >> 06) & 0x1f), ((op >> 00) & 0x3f)); exit(1); }
+#define NOT_IMPLEMENTED()   \
+    {   \
+        std::printf("PC: 0x%016llx Not implemented: OP:%02o %02o %02o %02o %02o %02o\n", \
+            _pc, \
+            (op >> 26), \
+            ((op >> 21) & 0x1f), \
+            ((op >> 16) & 0x1f), \
+            ((op >> 11) & 0x1f), \
+            ((op >> 06) & 0x1f), \
+            ((op >> 00) & 0x3f) \
+        ); \
+        exit(1); \
+    }
 
-#define RS              ((std::uint8_t)((op >> 21) & 0x1f))
-#define RT              ((std::uint8_t)((op >> 16) & 0x1f))
-#define RD              ((std::uint8_t)((op >> 11) & 0x1f))
-#define SA              ((std::uint8_t)((op >>  6) & 0x1f))
-#define IMM             ((std::uint16_t)op)
-#define SIMM            ((std::int16_t)op)
-#define JUMP_TARGET     ((std::uint32_t)op & 0x3ffffff)
+#define RS ((std::uint8_t)((op >> 21) & 0x1f))
+#define RT ((std::uint8_t)((op >> 16) & 0x1f))
+#define RD ((std::uint8_t)((op >> 11) & 0x1f))
+#define SA ((std::uint8_t)((op >> 6) & 0x1f))
+#define IMM ((std::uint16_t)op)
+#define SIMM ((std::int16_t)op)
+#define JUMP_TARGET ((std::uint32_t)op & 0x3ffffff)
 
 using namespace libnin64;
 
@@ -49,16 +61,16 @@ CPU::CPU(Bus& bus)
 , _llAddr{}
 , _llBit{}
 {
-    _regs[ 0].u64 = 0;
-    _regs[ 1].u64 = 0x1;
-    _regs[ 2].u64 = 0x0ebda536;
-    _regs[ 3].u64 = 0x0ebda536;
-    _regs[ 4].u64 = 0x0000a536;
-    _regs[ 5].u64 = 0;
-    _regs[ 6].u64 = 0xffffffffa4001f0c;
-    _regs[ 7].u64 = 0xffffffffa4001f08;
-    _regs[ 8].u64 = 0x00000000000000C0;
-    _regs[ 9].u64 = 0x0000000000000000;
+    _regs[0].u64  = 0;
+    _regs[1].u64  = 0x1;
+    _regs[2].u64  = 0x0ebda536;
+    _regs[3].u64  = 0x0ebda536;
+    _regs[4].u64  = 0x0000a536;
+    _regs[5].u64  = 0;
+    _regs[6].u64  = 0xffffffffa4001f0c;
+    _regs[7].u64  = 0xffffffffa4001f08;
+    _regs[8].u64  = 0x00000000000000C0;
+    _regs[9].u64  = 0x0000000000000000;
     _regs[10].u64 = 0x0000000000000040;
     _regs[11].u64 = 0xffffffffa4000040;
     _regs[12].u64 = 0xffffffffed10d0b3;
@@ -81,6 +93,19 @@ CPU::CPU(Bus& bus)
     _regs[29].u64 = 0xa4001ff0;
     _regs[30].u64 = 0x0;
     _regs[31].u64 = 0xffffffffa4001550;
+
+    /* TODO: Do an actual CIC check */
+    _regs[1].u64  = 0x0000000000000001;
+    _regs[2].u64  = 0x000000000ebda536;
+    _regs[3].u64  = 0x000000000ebda536;
+    _regs[4].u64  = 0x000000000000a536;
+    _regs[5].u64  = 0xffffffffc95973d5;
+    _regs[12].u64 = 0xffffffffed10d0b3;
+    _regs[13].u64 = 0x000000001402a4cc;
+    _regs[14].u64 = 0x000000002449a366;
+    _regs[15].u64 = 0x000000003103e121;
+    _regs[22].u64 = 0x000000000000003f;
+    _regs[25].u64 = 0xffffffff9debb54f;
 }
 
 CPU::~CPU()
@@ -100,14 +125,13 @@ void CPU::tick(std::size_t count)
 
 void CPU::tick()
 {
-    //std::printf("PC: 0x%016llx\n", _pc);
     std::uint32_t op;
     std::uint64_t tmp;
     std::uint64_t tmp2;
 
     // For current tick
     op = _bus.read32((std::uint32_t)_pc);
-    //std::printf("OP: 0x%08x Details:%02o %02o %02o %02o %02o %02o\n", op, (op >> 26), ((op >> 21) & 0x1f), ((op >> 16) & 0x1f), ((op >> 11) & 0x1f), ((op >> 06) & 0x1f), ((op >> 00) & 0x3f));
+    //std::printf("PC: 0x%016llx OP: 0x%08x Details:%02o %02o %02o %02o %02o %02o\n", _pc,  op, (op >> 26), ((op >> 21) & 0x1f), ((op >> 16) & 0x1f), ((op >> 11) & 0x1f), ((op >> 06) & 0x1f), ((op >> 00) & 0x3f));
     //for (int i = 0; i < 32; ++i) { std::printf("  REG %02d: 0x%016llx\n", i, _regs[i].u64); }
 
     // For next tick
@@ -141,7 +165,7 @@ void CPU::tick()
             _pcNext = _regs[RS].u64;
             break;
         case 011: // JALR (Jump And Link Register)
-            _pcNext = _regs[RS].u64;
+            _pcNext       = _regs[RS].u64;
             _regs[RD].u64 = _pc + 4;
             break;
         case 014: // SYSCALL (System Call)
@@ -175,12 +199,12 @@ void CPU::tick()
             NOT_IMPLEMENTED();
             break;
         case 030: // MULT (Multiply)
-            tmp = (std::int64_t)_regs[RS].i32 * _regs[RT].i32;
+            tmp     = (std::int64_t)_regs[RS].i32 * _regs[RT].i32;
             _lo.i64 = (std::int32_t)(tmp & 0xffffffff);
             _hi.i64 = (std::int32_t)((tmp >> 32) & 0xffffffff);
             break;
         case 031: // MULTU (Multiply Unsigned)
-            tmp = (std::uint64_t)_regs[RS].u32 * _regs[RT].u32;
+            tmp     = (std::uint64_t)_regs[RS].u32 * _regs[RT].u32;
             _lo.i64 = (std::int32_t)(tmp & 0xffffffff);
             _hi.i64 = (std::int32_t)((tmp >> 32) & 0xffffffff);
             break;
@@ -203,16 +227,16 @@ void CPU::tick()
             NOT_IMPLEMENTED();
             break;
         case 040: // ADD (Add)
-            _regs[RD].i64 = (std::int32_t)(_regs[RS].i64 + _regs[RD].i64);
+            _regs[RD].i64 = (std::int32_t)(_regs[RS].i64 + _regs[RT].i64);
             break;
         case 041: // ADDU (Add Unsigned)
-            _regs[RD].i64 = (std::int32_t)(_regs[RS].i64 + _regs[RD].i64);
+            _regs[RD].i64 = (std::int32_t)(_regs[RS].i64 + _regs[RT].i64);
             break;
         case 042: // SUB (Subtract)
-            _regs[RD].i64 = (std::int32_t)(_regs[RS].i64 - _regs[RD].i64);
+            _regs[RD].i64 = (std::int32_t)(_regs[RS].i64 - _regs[RT].i64);
             break;
         case 043: // SUBU (Subtract Unsigned)
-            _regs[RD].i64 = (std::int32_t)(_regs[RS].i64 - _regs[RD].i64);
+            _regs[RD].i64 = (std::int32_t)(_regs[RS].i64 - _regs[RT].i64);
             break;
         case 044: // AND
             _regs[RD].u64 = _regs[RS].u64 & _regs[RT].u64;
@@ -289,16 +313,38 @@ void CPU::tick()
         switch (RT)
         {
         case 000: // BLTZ
-            if (_regs[RS].i64 < 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); }
+            if (_regs[RS].i64 < 0)
+            {
+                _pcNext = _pc + ((std::int64_t)SIMM << 2);
+            }
             break;
         case 001: // BGEZ
-            if (_regs[RS].i64 >= 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); }
+            if (_regs[RS].i64 >= 0)
+            {
+                _pcNext = _pc + ((std::int64_t)SIMM << 2);
+            }
             break;
         case 002: // BLTZL
-            if (_regs[RS].i64 < 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); } else { _pc = _pcNext; _pcNext += 4; }
+            if (_regs[RS].i64 < 0)
+            {
+                _pcNext = _pc + ((std::int64_t)SIMM << 2);
+            }
+            else
+            {
+                _pc = _pcNext;
+                _pcNext += 4;
+            }
             break;
         case 003: // BGEZL (Branch On Greater Than Or Equal To Zero Likely)
-            if (_regs[RS].i64 >= 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); } else { _pc = _pcNext; _pcNext += 4; }
+            if (_regs[RS].i64 >= 0)
+            {
+                _pcNext = _pc + ((std::int64_t)SIMM << 2);
+            }
+            else
+            {
+                _pc = _pcNext;
+                _pcNext += 4;
+            }
             break;
         case 010: // TGEI
             NOT_IMPLEMENTED();
@@ -320,19 +366,41 @@ void CPU::tick()
             break;
         case 020: // BLTZAL (Branch On Less Than Zero And Link Likely)
             _regs[31].u64 = _pc + 4;
-            if (_regs[RS].i64 < 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); }
+            if (_regs[RS].i64 < 0)
+            {
+                _pcNext = _pc + ((std::int64_t)SIMM << 2);
+            }
             break;
         case 021: // BGEZAL (Branch On Greater Than Or Equal To Zero And Link Likely)
             _regs[31].u64 = _pc + 4;
-            if (_regs[RS].i64 >= 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); }
+            if (_regs[RS].i64 >= 0)
+            {
+                _pcNext = _pc + ((std::int64_t)SIMM << 2);
+            }
             break;
         case 022: // BLTZALL
             _regs[31].u64 = _pc + 4;
-            if (_regs[RS].i64 < 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); } else { _pc = _pcNext; _pcNext += 4; }
+            if (_regs[RS].i64 < 0)
+            {
+                _pcNext = _pc + ((std::int64_t)SIMM << 2);
+            }
+            else
+            {
+                _pc = _pcNext;
+                _pcNext += 4;
+            }
             break;
         case 023: // BGEZALL
             _regs[31].u64 = _pc + 4;
-            if (_regs[RS].i64 >= 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); } else { _pc = _pcNext; _pcNext += 4; }
+            if (_regs[RS].i64 >= 0)
+            {
+                _pcNext = _pc + ((std::int64_t)SIMM << 2);
+            }
+            else
+            {
+                _pc = _pcNext;
+                _pcNext += 4;
+            }
             break;
         default:
             NOT_IMPLEMENTED();
@@ -343,26 +411,38 @@ void CPU::tick()
         _pcNext = ((std::uint64_t)JUMP_TARGET << 2) | (_pc & 0xfffffffff0000000ULL);
         break;
     case 003: // JAL (Jump And Link)
-        _pcNext = ((std::uint64_t)JUMP_TARGET << 2) | (_pc & 0xfffffffff0000000ULL);
+        _pcNext       = ((std::uint64_t)JUMP_TARGET << 2) | (_pc & 0xfffffffff0000000ULL);
         _regs[31].u64 = _pc + 4;
         break;
     case 004: // BEQ
-        if (_regs[RS].u64 == _regs[RT].u64) { _pcNext = _pc + ((std::int64_t)SIMM << 2); }
+        if (_regs[RS].u64 == _regs[RT].u64)
+        {
+            _pcNext = _pc + ((std::int64_t)SIMM << 2);
+        }
         break;
     case 005: // BNE
-        if (_regs[RS].u64 != _regs[RT].u64) { _pcNext = _pc + ((std::int64_t)SIMM << 2); }
+        if (_regs[RS].u64 != _regs[RT].u64)
+        {
+            _pcNext = _pc + ((std::int64_t)SIMM << 2);
+        }
         break;
     case 006: // BLEZ
-        if (_regs[RS].i64 <= 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); }
+        if (_regs[RS].i64 <= 0)
+        {
+            _pcNext = _pc + ((std::int64_t)SIMM << 2);
+        }
         break;
     case 007: // BGTZ
-        if (_regs[RS].i64 > 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); }
+        if (_regs[RS].i64 > 0)
+        {
+            _pcNext = _pc + ((std::int64_t)SIMM << 2);
+        }
         break;
     case 010: // ADDI (Add Immediate)
-        _regs[RT].i64 = (_regs[RS].i32 + SIMM) & 0xffffffff;
+        _regs[RT].i64 = (_regs[RS].i32 + SIMM);
         break;
     case 011: // ADDIU (Add Immediate Unsigned)
-        _regs[RT].i64 = (_regs[RS].i32 + SIMM) & 0xffffffff;
+        _regs[RT].i64 = (_regs[RS].i32 + SIMM);
         break;
     case 012: // SLTI (Set On Less Than Immediate)
         _regs[RT].u64 = (_regs[RS].i64 < SIMM) ? 1 : 0;
@@ -418,16 +498,48 @@ void CPU::tick()
         NOT_IMPLEMENTED();
         break;
     case 024: // BEQL
-        if (_regs[RS].u64 == _regs[RT].u64) { _pcNext = _pc + ((std::int64_t)SIMM << 2); } else { _pc = _pcNext; _pcNext += 4; }
+        if (_regs[RS].u64 == _regs[RT].u64)
+        {
+            _pcNext = _pc + ((std::int64_t)SIMM << 2);
+        }
+        else
+        {
+            _pc = _pcNext;
+            _pcNext += 4;
+        }
         break;
     case 025: // BNEL
-        if (_regs[RS].u64 != _regs[RT].u64) { _pcNext = _pc + ((std::int64_t)SIMM << 2); } else { _pc = _pcNext; _pcNext += 4; }
+        if (_regs[RS].u64 != _regs[RT].u64)
+        {
+            _pcNext = _pc + ((std::int64_t)SIMM << 2);
+        }
+        else
+        {
+            _pc = _pcNext;
+            _pcNext += 4;
+        }
         break;
     case 026: // BLEZL
-        if (_regs[RS].i64 <= 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); } else { _pc = _pcNext; _pcNext += 4; }
+        if (_regs[RS].i64 <= 0)
+        {
+            _pcNext = _pc + ((std::int64_t)SIMM << 2);
+        }
+        else
+        {
+            _pc = _pcNext;
+            _pcNext += 4;
+        }
         break;
     case 027: // BGTZL (Branch On Greater Than Zero Likely)
-        if (_regs[RS].i64 > 0) { _pcNext = _pc + ((std::int64_t)SIMM << 2); } else { _pc = _pcNext; _pcNext += 4; }
+        if (_regs[RS].i64 > 0)
+        {
+            _pcNext = _pc + ((std::int64_t)SIMM << 2);
+        }
+        else
+        {
+            _pc = _pcNext;
+            _pcNext += 4;
+        }
         break;
     case 030: // DADDI (Doubleword Add Immediate)
         _regs[RT].i64 = _regs[RS].i64 + SIMM;
@@ -439,7 +551,7 @@ void CPU::tick()
         NOT_IMPLEMENTED();
         break;
     case 033: // LDR (Load Doubleword Right)
-        tmp = _regs[RS].u64 + SIMM;
+        tmp  = _regs[RS].u64 + SIMM;
         tmp2 = _bus.read64(tmp & 0xfffffff8); // Mask the offset
         switch (tmp & 0x7)
         {
@@ -462,7 +574,7 @@ void CPU::tick()
             tmp = (tmp2 >> 16) | (_regs[RT].u64 & 0xffff000000000000ull);
             break;
         case 0x6:
-            tmp = (tmp2 >>  8) | (_regs[RT].u64 & 0xff00000000000000ull);
+            tmp = (tmp2 >> 8) | (_regs[RT].u64 & 0xff00000000000000ull);
             break;
         case 0x7:
             tmp = tmp2;
@@ -510,7 +622,7 @@ void CPU::tick()
         NOT_IMPLEMENTED();
         break;
     case 055: // SDR (Store Doubleword Right)
-        tmp = _regs[RS].u64 + SIMM;
+        tmp  = _regs[RS].u64 + SIMM;
         tmp2 = _bus.read64(tmp & 0xfffffff8); // Mask the offset
         switch (tmp & 0x7)
         {
@@ -533,7 +645,7 @@ void CPU::tick()
             _bus.write64((tmp & 0xfffffff8), (_regs[RT].u64 << 16) | (tmp2 & 0x000000000000ffffull));
             break;
         case 0x6:
-            _bus.write64((tmp & 0xfffffff8), (_regs[RT].u64 <<  8) | (tmp2 & 0x00000000000000ffull));
+            _bus.write64((tmp & 0xfffffff8), (_regs[RT].u64 << 8) | (tmp2 & 0x00000000000000ffull));
             break;
         case 0x7:
             _bus.write64((tmp & 0xfffffff8), _regs[RT].u64);
@@ -546,10 +658,10 @@ void CPU::tick()
     case 057: // CACHE
         break;
     case 060: // LL (Load Linked)
-        tmp = _regs[RS].u32 + SIMM;
+        tmp           = _regs[RS].u32 + SIMM;
         _regs[RT].i64 = (std::int32_t)_bus.read32(tmp);
-        _llAddr = tmp;
-        _llBit = true;
+        _llAddr       = tmp;
+        _llBit        = true;
         break;
     case 061: // LWC1
         NOT_IMPLEMENTED();

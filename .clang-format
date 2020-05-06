@@ -1,0 +1,16 @@
+---
+Language: Cpp
+BreakBeforeBraces: Allman
+IndentWidth: 4
+ColumnLimit: 0
+Cpp11BracedListStyle: true
+DerivePointerAlignment: false
+PointerAlignment: Left
+NamespaceIndentation: None
+BinPackArguments: false
+BinPackParameters: false
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+ConstructorInitializerIndentWidth: 0
+BreakConstructorInitializersBeforeComma: true
+AlwaysBreakTemplateDeclarations: No

@@ -6,15 +6,13 @@ State::State()
 : cart{}
 , memory{}
 , pi{memory, cart}
-, bus{memory, pi}
+, bus{memory, cart, pi}
 , cpu{bus}
 {
-
 }
 
 State::~State()
 {
-
 }
 
 Nin64Err State::loadRom(const char* path)
