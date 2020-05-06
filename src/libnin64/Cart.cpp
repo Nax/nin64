@@ -21,6 +21,18 @@ Cart::~Cart()
     delete[] _data;
 }
 
+CIC Cart::cic() const
+{
+    std::uint32_t cicChecksum;
+
+    cicChecksum = crc32(_data + 0x40, 0x1000 - 0x40);
+    switch (cicChecksum)
+    {
+    default:
+        return CIC::Unknown;
+    }
+}
+
 void Cart::read(std::uint8_t *dst, std::uint32_t offset, std::uint32_t size)
 {
     std::copy(_data + offset, _data + offset + size, dst);

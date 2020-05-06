@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <libnin64/Bus.h>
 #include <libnin64/CPU.h>
+#include <libnin64/Util.h>
 
 #define COP0_REG_INDEX 0
 #define COP0_REG_RANDOM 1
@@ -29,23 +30,26 @@
 #define COP0_REG_TAGHI 29
 #define COP0_REG_ERROREPC 30
 
-#define NOT_IMPLEMENTED()   \
-    {   \
-        std::printf("PC: 0x%016llx Not implemented: OP:%02o %02o %02o %02o %02o %02o\n", \
-            _pc, \
-            (op >> 26), \
-            ((op >> 21) & 0x1f), \
-            ((op >> 16) & 0x1f), \
-            ((op >> 11) & 0x1f), \
-            ((op >> 06) & 0x1f), \
-            ((op >> 00) & 0x3f) \
-        ); \
-        exit(1); \
+#define FCR_REVISION 0
+#define FCR_CONTROL 31
+
+#define NOT_IMPLEMENTED()                                                                         \
+    {                                                                                             \
+        std::printf("PC: 0x%016llx Not implemented: OP:%02o RS:%02o RT:%02o RD:%02o %02o %02o\n", \
+                    _pc,                                                                          \
+                    (op >> 26),                                                                   \
+                    ((op >> 21) & 0x1f),                                                          \
+                    ((op >> 16) & 0x1f),                                                          \
+                    ((op >> 11) & 0x1f),                                                          \
+                    ((op >> 06) & 0x1f),                                                          \
+                    ((op >> 00) & 0x3f));                                                         \
+        exit(1);                                                                                  \
     }
 
 #define RS ((std::uint8_t)((op >> 21) & 0x1f))
 #define RT ((std::uint8_t)((op >> 16) & 0x1f))
 #define RD ((std::uint8_t)((op >> 11) & 0x1f))
+#define FS RD
 #define SA ((std::uint8_t)((op >> 6) & 0x1f))
 #define IMM ((std::uint16_t)op)
 #define SIMM ((std::int16_t)op)
@@ -150,7 +154,7 @@ void CPU::tick()
             _regs[RD].i64 = (std::int32_t)((_regs[RT].u32 >> SA) & 0xffffffff);
             break;
         case 003: // SRA (Shift Right Arithmetic)
-            NOT_IMPLEMENTED();
+            _regs[RD].i64 = (std::int32_t)((_regs[RT].i32 >> SA) & 0xffffffff);
             break;
         case 004: // SLLV (Shift Left Logical Variable)
             _regs[RD].i64 = (std::int32_t)((_regs[RT].u32 << (_regs[RS].u8 & 0x1f)) & 0xffffffff);
@@ -209,22 +213,26 @@ void CPU::tick()
             _hi.i64 = (std::int32_t)((tmp >> 32) & 0xffffffff);
             break;
         case 032: // DIV
-            NOT_IMPLEMENTED();
+            _lo.i64 = _regs[RS].i32 / _regs[RT].i32;
+            _hi.i64 = _regs[RS].i32 % _regs[RT].i32;
             break;
         case 033: // DIVU
-            NOT_IMPLEMENTED();
+            _lo.u64 = _regs[RS].u32 / _regs[RT].u32;
+            _hi.u64 = _regs[RS].u32 % _regs[RT].u32;
             break;
-        case 034: // DMULT
-            NOT_IMPLEMENTED();
+        case 034: // DMULT (Doubleword Multiply)
+            mul128(_regs[RS].i64, _regs[RT].i64, &_lo.i64, &_hi.i64);
             break;
-        case 035: // DMULTU
-            NOT_IMPLEMENTED();
+        case 035: // DMULTU (Doubleword Multiply Unsigned)
+            umul128(_regs[RS].u64, _regs[RT].u64, &_lo.u64, &_hi.u64);
             break;
-        case 036: // DDIV
-            NOT_IMPLEMENTED();
+        case 036: // DDIV (Doubleword Divide)
+            _lo.i64 = _regs[RS].i64 / _regs[RT].i64;
+            _hi.i64 = _regs[RS].i64 % _regs[RT].i64;
             break;
-        case 037: // DDIVU
-            NOT_IMPLEMENTED();
+        case 037: // DDIVU (Doubleword Divide Unsigned)
+            _lo.u64 = _regs[RS].u64 / _regs[RT].u64;
+            _hi.u64 = _regs[RS].u64 % _regs[RT].u64;
             break;
         case 040: // ADD (Add)
             _regs[RD].i64 = (std::int32_t)(_regs[RS].i64 + _regs[RT].i64);
@@ -286,23 +294,23 @@ void CPU::tick()
         case 066: // TNE
             NOT_IMPLEMENTED();
             break;
-        case 070: // DSLL
-            NOT_IMPLEMENTED();
+        case 070: // DSLL (Doubleword Shift Left Logical)
+            _regs[RD].u64 = _regs[RT].u64 << SA;
             break;
-        case 072: // DSRL
-            NOT_IMPLEMENTED();
+        case 072: // DSRL (Doubleword Shift Right Logical)
+            _regs[RD].u64 = _regs[RT].u64 >> SA;
             break;
-        case 073: // DSRA
-            NOT_IMPLEMENTED();
+        case 073: // DSRA (Doubleword Shift Right Arithmetic)
+            _regs[RD].i64 = _regs[RT].i64 >> SA;
             break;
-        case 074: // DSLL32
-            NOT_IMPLEMENTED();
+        case 074: // DSLL32 (Doubleword Shift Left Logical + 32)
+            _regs[RD].u64 = _regs[RT].u64 << (32 + SA);
             break;
-        case 076: // DSRL32
-            NOT_IMPLEMENTED();
+        case 076: // DSRL32 (Doubleword Shift Right Logical + 32)
+            _regs[RD].u64 = _regs[RT].u64 >> (32 + SA);
             break;
-        case 077: // DSRA32
-            NOT_IMPLEMENTED();
+        case 077: // DSRA32 (Doubleword Shift Right Arithmetic + 32)
+            _regs[RD].i64 = _regs[RT].i64 >> (32 + SA);
             break;
         default:
             NOT_IMPLEMENTED();
@@ -486,13 +494,82 @@ void CPU::tick()
         case 010: // BC
             NOT_IMPLEMENTED();
             break;
-        default:
-            NOT_IMPLEMENTED();
+        case 020:
+        case 021:
+        case 022:
+        case 023:
+        case 024:
+        case 025:
+        case 026:
+        case 027:
+        case 030:
+        case 031:
+        case 032:
+        case 033:
+        case 034:
+        case 035:
+        case 036:
+        case 037:
+            switch (op & 077)
+            {
+            case 001: // TLBR
+                NOT_IMPLEMENTED();
+                break;
+            case 002: // TLBWI
+                // To implement when doing TLB
+                break;
+            case 006: // TLBWR
+                NOT_IMPLEMENTED();
+                break;
+            case 010: // TLBP
+                NOT_IMPLEMENTED();
+                break;
+            case 030: // ERET X
+                NOT_IMPLEMENTED();
+                break;
+            }
             break;
         }
         break;
     case 021: // COP1 (Coprocessor 1)
-        NOT_IMPLEMENTED();
+        switch (RS)
+        {
+        case 000: // MF
+            NOT_IMPLEMENTED();
+            break;
+        case 001: // DMF
+            NOT_IMPLEMENTED();
+            break;
+        case 002: // CF (Move Control From FPU)
+            _regs[RT].i64 = (std::int32_t)fcrRead(FS);
+            break;
+        case 004: // MT
+            NOT_IMPLEMENTED();
+            break;
+        case 005: // DMT
+            NOT_IMPLEMENTED();
+            break;
+        case 006: // CT (Move Control Word To FPU)
+            fcrWrite(FS, _regs[RT].u32);
+            break;
+        case 010: // BC
+            switch (RT)
+            {
+            case 000: // BCF
+                break;
+            case 001: // BCT
+                break;
+            case 002: // BCFL
+                break;
+            case 003: // BCTL
+                break;
+            }
+            NOT_IMPLEMENTED();
+            break;
+        default:
+            NOT_IMPLEMENTED();
+            break;
+        }
         break;
     case 022: // COP2 (Coprocessor 2)
         NOT_IMPLEMENTED();
@@ -828,6 +905,37 @@ void CPU::cop0Write(std::uint8_t reg, std::uint32_t value)
     case COP0_REG_TAGHI:
         break;
     case COP0_REG_ERROREPC:
+        break;
+    }
+}
+
+std::uint32_t CPU::fcrRead(std::uint8_t reg)
+{
+    std::uint32_t value{};
+
+    switch (reg)
+    {
+    case FCR_CONTROL:
+        break;
+    case FCR_REVISION:
+        value = 0x000B0100;
+        break;
+    default:
+        break;
+    }
+
+    return value;
+}
+
+void CPU::fcrWrite(std::uint8_t reg, std::uint32_t value)
+{
+    switch (reg)
+    {
+    case FCR_CONTROL:
+        break;
+    case FCR_REVISION:
+        break;
+    default:
         break;
     }
 }

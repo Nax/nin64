@@ -1,10 +1,39 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <cstddef>
 #include <cstdint>
+
+#if defined(_WIN32)
+# include <intrin.h>
+#endif
 
 namespace libnin64
 {
+
+inline static void mul128(std::int64_t a, std::int64_t b, std::int64_t* lo, std::int64_t* hi)
+{
+#if defined(_WIN32)
+    *lo = _mul128(a, b, hi);
+#else
+    __int128_t res = (__int128_t)a * (__int128_t)b;
+    *lo = (res & 0xffffffffffffffffull);
+    *hi = (res >> 64);
+#endif
+}
+
+inline static void umul128(std::uint64_t a, std::uint64_t b, std::uint64_t* lo, std::uint64_t* hi)
+{
+#if defined(_WIN32)
+    *lo = _umul128(a, b, hi);
+#else
+    __uint128_t res = (__uint128_t)a * (__uint128_t)b;
+    *lo = (res & 0xffffffffffffffffull);
+    *hi = (res >> 64);
+#endif
+}
+
+std::uint32_t crc32(const void* data, std::size_t length);
 
 inline static constexpr std::uint8_t swap(std::uint8_t v)
 {

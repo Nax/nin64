@@ -8,19 +8,30 @@
 namespace libnin64
 {
 
-    class Cart : private NonCopyable
-    {
-    public:
-        Cart();
-        ~Cart();
+enum class CIC
+{
+    Unknown = 0,
+    NUS_6101,
+    NUS_6102,
+    NUS_6103,
+    NUS_6105,
+    NUS_6106,
+};
 
-        void        read(std::uint8_t* dst, std::uint32_t offset, std::uint32_t size);
-        Nin64Err    load(const char* path);
+class Cart : private NonCopyable
+{
+public:
+    Cart();
+    ~Cart();
 
-    private:
-        std::uint8_t* _data;
-        std::uint32_t   _size;
-    };
+    CIC         cic() const;
+    void        read(std::uint8_t* dst, std::uint32_t offset, std::uint32_t size);
+    Nin64Err    load(const char* path);
+
+private:
+    std::uint8_t* _data;
+    std::uint32_t   _size;
+};
 
 }
 

@@ -21,6 +21,8 @@ public:
 private:
     std::uint32_t   cop0Read(std::uint8_t reg);
     void            cop0Write(std::uint8_t reg, std::uint32_t value);
+    std::uint32_t   fcrRead(std::uint8_t reg);
+    void            fcrWrite(std::uint8_t reg, std::uint32_t value);
 
     union Reg
     {
