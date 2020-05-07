@@ -63,6 +63,10 @@ CPU::CPU(Bus& bus)
 , _pcNext{_pc + 4}
 , _regs{}
 , _llAddr{}
+, _epc{}
+, _errorEpc{}
+, _exl{}
+, _erl{true}
 , _llBit{}
 {
     _regs[0].u64  = 0;
@@ -544,19 +548,30 @@ void CPU::tick()
             switch (op & 077)
             {
             case 001: // TLBR
-                NOT_IMPLEMENTED();
+                // To implement when doing TLB
                 break;
             case 002: // TLBWI
                 // To implement when doing TLB
                 break;
             case 006: // TLBWR
-                NOT_IMPLEMENTED();
+                // To implement when doing TLB
                 break;
             case 010: // TLBP
-                NOT_IMPLEMENTED();
+                // To implement when doing TLB
                 break;
-            case 030: // ERET X
-                NOT_IMPLEMENTED();
+            case 030: // ERET
+                if (_erl)
+                {
+                    _pc  = (std::int64_t)((std::int32_t)_errorEpc);
+                    _erl = false;
+                }
+                else
+                {
+                    _pc  = (std::int64_t)((std::int32_t)_epc);
+                    _exl = false;
+                }
+                _llBit  = false;
+                _pcNext = _pc + 4;
                 break;
             }
             break;
@@ -818,6 +833,12 @@ void CPU::tick()
     _regs[0].u64 = 0;
 }
 
+#define COP0_NOT_IMPLEMENTED(w)                                                        \
+    {                                                                                  \
+        std::printf("COP0 reg not implemented (%s): %d\n", w ? "write" : "read", reg); \
+        std::exit(2);                                                                  \
+    }
+
 std::uint32_t CPU::cop0Read(std::uint8_t reg)
 {
     std::uint32_t value{};
@@ -825,57 +846,86 @@ std::uint32_t CPU::cop0Read(std::uint8_t reg)
     switch (reg)
     {
     case COP0_REG_INDEX:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_RANDOM:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_ENTRYLO0:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_ENTRYLO1:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_CONTEXT:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_PAGEMASK:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_WIRED:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_BADVADDR:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_COUNT:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_ENTRYHI:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_COMPARE:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_SR:
+        if (_exl) // TODO: Configure Clang Format
+            value |= 0x00000002;
+        if (_erl)
+            value |= 0x00000004;
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_CAUSE:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_EPC:
+        value = _epc;
         break;
     case COP0_REG_PRID:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_CONFIG:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_LLADDR:
         value = _llAddr;
         break;
     case COP0_REG_WATCHLO:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_WATCHHI:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_XCONTEXT:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_PERR:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_CACHEERR:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_TAGLO:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_TAGHI:
+        // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_ERROREPC:
+        value = _errorEpc;
         break;
     default:
+        COP0_NOT_IMPLEMENTED(false);
         break;
     }
 
@@ -887,55 +937,80 @@ void CPU::cop0Write(std::uint8_t reg, std::uint32_t value)
     switch (reg)
     {
     case COP0_REG_INDEX:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_RANDOM:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_ENTRYLO0:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_ENTRYLO1:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_CONTEXT:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_PAGEMASK:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_WIRED:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_BADVADDR:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_COUNT:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_ENTRYHI:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_COMPARE:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_SR:
+        _exl = !!(value & 0x00000002);
+        _erl = !!(value & 0x00000004);
         break;
     case COP0_REG_CAUSE:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_EPC:
+        _epc = value;
         break;
     case COP0_REG_PRID:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_CONFIG:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_LLADDR:
         _llAddr = value;
         break;
     case COP0_REG_WATCHLO:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_WATCHHI:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_XCONTEXT:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_PERR:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_CACHEERR:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_TAGLO:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_TAGHI:
+        // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_ERROREPC:
+        _errorEpc = value;
         break;
     }
 }
