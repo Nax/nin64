@@ -55,6 +55,8 @@
 #define SIMM ((std::int16_t)op)
 #define JUMP_TARGET ((std::uint32_t)op & 0x3ffffff)
 
+#define INT_TIMER 0x80
+
 using namespace libnin64;
 
 CPU::CPU(Bus& bus)
@@ -65,9 +67,14 @@ CPU::CPU(Bus& bus)
 , _llAddr{}
 , _epc{}
 , _errorEpc{}
-, _exl{}
+, _ip{}
+, _im{}
 , _erl{true}
+, _exl{}
+, _ie{}
 , _llBit{}
+, _count{}
+, _compare{}
 {
     _regs[0].u64  = 0;
     _regs[1].u64  = 0x1;
@@ -168,6 +175,11 @@ void CPU::tick()
     std::uint64_t tmp;
     std::uint64_t tmp2;
 
+    if (_ie && !_erl && !_exl && (_im & _ip))
+    {
+        std::printf("INTERRUPT !!!\n");
+        std::exit(3);
+    }
     // For current tick
     op = _bus.read32((std::uint32_t)_pc);
     //std::printf("PC: 0x%016llx OP: 0x%08x Details:%02o %02o %02o %02o %02o %02o\n", _pc,  op, (op >> 26), ((op >> 21) & 0x1f), ((op >> 16) & 0x1f), ((op >> 11) & 0x1f), ((op >> 06) & 0x1f), ((op >> 00) & 0x3f));
@@ -831,6 +843,13 @@ void CPU::tick()
     }
 
     _regs[0].u64 = 0;
+    _count++;
+    if (_count == _compare)
+    {
+        _ip |= INT_TIMER;
+        std::printf("COUNT == COMPARE!\n");
+        std::exit(4);
+    }
 }
 
 #define COP0_NOT_IMPLEMENTED(w)                                                        \
@@ -870,23 +889,26 @@ std::uint32_t CPU::cop0Read(std::uint8_t reg)
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_COUNT:
-        // COP0_NOT_IMPLEMENTED(false);
+        value = _count;
         break;
     case COP0_REG_ENTRYHI:
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_COMPARE:
-        // COP0_NOT_IMPLEMENTED(false);
+        value = _compare;
         break;
     case COP0_REG_SR:
-        if (_exl) // TODO: Configure Clang Format
+        if (_ie) // TODO: Configure Clang Format
+            value |= 0x00000001;
+        if (_exl)
             value |= 0x00000002;
         if (_erl)
             value |= 0x00000004;
+        value |= ((std::uint32_t)_im << 8);
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_CAUSE:
-        // COP0_NOT_IMPLEMENTED(false);
+        value |= (std::uint32_t)_ip << 8;
         break;
     case COP0_REG_EPC:
         value = _epc;
@@ -961,20 +983,25 @@ void CPU::cop0Write(std::uint8_t reg, std::uint32_t value)
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_COUNT:
-        // COP0_NOT_IMPLEMENTED(true);
+        std::printf("COUNT: %u\n", value);
+        _count = value;
         break;
     case COP0_REG_ENTRYHI:
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_COMPARE:
-        // COP0_NOT_IMPLEMENTED(true);
+        std::printf("COMPARE: %u\n", value);
+        _compare = value;
+        _ip &= ~INT_TIMER;
         break;
     case COP0_REG_SR:
+        _ie  = !!(value & 0x00000001);
         _exl = !!(value & 0x00000002);
         _erl = !!(value & 0x00000004);
+        _im  = (value >> 8) & 0xff;
         break;
     case COP0_REG_CAUSE:
-        // COP0_NOT_IMPLEMENTED(true);
+        _ip = (_ip & 0xfc) | ((value >> 8) & 0x03);
         break;
     case COP0_REG_EPC:
         _epc = value;

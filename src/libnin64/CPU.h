@@ -47,9 +47,14 @@ class CPU : private NonCopyable
     std::uint32_t _llAddr;
     std::uint32_t _epc;
     std::uint32_t _errorEpc;
-    bool          _exl : 1;
+    std::uint8_t  _ip;
+    std::uint8_t  _im;
     bool          _erl : 1;
+    bool          _exl : 1;
+    bool          _ie : 1;
     bool          _llBit : 1;
+    std::uint32_t _count;
+    std::uint32_t _compare;
 };
 
 } // namespace libnin64
