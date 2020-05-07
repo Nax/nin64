@@ -28,6 +28,12 @@ CIC Cart::cic() const
     cicChecksum = crc32(_data + 0x40, 0x1000 - 0x40);
     switch (cicChecksum)
     {
+    case 0x90bb6cb5:
+        return CIC::NUS_6102;
+    case 0x0b050ee0:
+        return CIC::NUS_6103;
+    case 0x98bc2c86:
+        return CIC::NUS_6105;
     default:
         return CIC::Unknown;
     }

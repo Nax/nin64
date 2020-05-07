@@ -24,5 +24,6 @@ Nin64Err State::loadRom(const char* path)
         return err;
     }
     cart.read(memory.spDmem, 0, 0x1000);
+    cpu.init(cart.cic());
     return NIN64_OK;
 }

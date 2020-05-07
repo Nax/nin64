@@ -1,5 +1,6 @@
-#include <cstdlib>
+#include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <nin64/nin64.h>
 
 static void displayError(Nin64Err err)
@@ -21,10 +22,11 @@ static void displayError(Nin64Err err)
     }
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-    Nin64State *state;
-    Nin64Err err;
+    Nin64State*   state;
+    Nin64Err      err;
+    std::uint64_t count{};
 
     err = nin64CreateState(&state, argv[1]);
     if (err)
@@ -34,7 +36,11 @@ int main(int argc, char **argv)
     }
     for (;;)
     {
-        nin64RunCycles(state, 1024 * 1024);
+        printf("=================\n");
+        printf("CYCLES: %016llu\n", count);
+        printf("=================\n");
+        nin64RunCycles(state, 1024 * 127);
+        count += 1024 * 127;
     }
     nin64DestroyState(state);
 

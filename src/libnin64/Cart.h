@@ -3,20 +3,11 @@
 
 #include <cstdint>
 #include <nin64/nin64.h>
+#include <libnin64/CIC.h>
 #include <libnin64/NonCopyable.h>
 
 namespace libnin64
 {
-
-enum class CIC
-{
-    Unknown = 0,
-    NUS_6101,
-    NUS_6102,
-    NUS_6103,
-    NUS_6105,
-    NUS_6106,
-};
 
 class Cart : private NonCopyable
 {

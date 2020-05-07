@@ -97,26 +97,57 @@ CPU::CPU(Bus& bus)
     _regs[29].u64 = 0xa4001ff0;
     _regs[30].u64 = 0x0;
     _regs[31].u64 = 0xffffffffa4001550;
-
-    /* TODO: Do an actual CIC check */
-    _regs[1].u64  = 0x0000000000000001;
-    _regs[2].u64  = 0x000000000ebda536;
-    _regs[3].u64  = 0x000000000ebda536;
-    _regs[4].u64  = 0x000000000000a536;
-    _regs[5].u64  = 0xffffffffc95973d5;
-    _regs[12].u64 = 0xffffffffed10d0b3;
-    _regs[13].u64 = 0x000000001402a4cc;
-    _regs[14].u64 = 0x000000002449a366;
-    _regs[15].u64 = 0x000000003103e121;
-    _regs[22].u64 = 0x000000000000003f;
-    _regs[25].u64 = 0xffffffff9debb54f;
 }
 
 CPU::~CPU()
 {
 }
 
-#include <cstdio>
+void CPU::init(CIC cic)
+{
+    switch (cic)
+    {
+    case CIC::Unknown:
+    case CIC::NUS_6102:
+        _regs[1].u64  = 0x0000000000000001;
+        _regs[2].u64  = 0x000000000ebda536;
+        _regs[3].u64  = 0x000000000ebda536;
+        _regs[4].u64  = 0x000000000000a536;
+        _regs[5].u64  = 0xffffffffc95973d5;
+        _regs[12].u64 = 0xffffffffed10d0b3;
+        _regs[13].u64 = 0x000000001402a4cc;
+        _regs[14].u64 = 0x000000002449a366;
+        _regs[15].u64 = 0x000000003103e121;
+        _regs[22].u64 = 0x000000000000003f;
+        _regs[25].u64 = 0xffffffff9debb54f;
+        break;
+    case CIC::NUS_6103:
+        _regs[1].u64  = 0x0000000000000001;
+        _regs[2].u64  = 0x0000000049a5ee96;
+        _regs[3].u64  = 0x0000000049a5ee96;
+        _regs[4].u64  = 0x000000000000ee96;
+        _regs[5].u64  = 0xffffffff95315a28;
+        _regs[12].u64 = 0xffffffffce9dfbf7;
+        _regs[13].u64 = 0xffffffffce9dfbf7;
+        _regs[14].u64 = 0x000000005baca1df;
+        _regs[15].u64 = 0x0000000018b63d28;
+        _regs[22].u64 = 0x0000000000000078;
+        _regs[25].u64 = 0xffffffff825b21c9;
+    case CIC::NUS_6105:
+        _regs[1].u64  = 0x0000000000000000;
+        _regs[2].u64  = 0xfffffffff58b0fbf;
+        _regs[3].u64  = 0xfffffffff58b0fbf;
+        _regs[4].u64  = 0x0000000000000fbf;
+        _regs[5].u64  = 0x000000005493fb9a;
+        _regs[12].u64 = 0xffffffff9651f81e;
+        _regs[13].u64 = 0x000000002d42aac5;
+        _regs[14].u64 = 0xffffffffc2c20384;
+        _regs[15].u64 = 0x0000000056584d60;
+        _regs[22].u64 = 0x0000000000000091;
+        _regs[25].u64 = 0xffffffffcdce565f;
+        break;
+    }
+}
 
 void CPU::tick(std::size_t count)
 {

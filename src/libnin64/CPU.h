@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <libnin64/CIC.h>
 #include <libnin64/NonCopyable.h>
 
 namespace libnin64
@@ -15,6 +16,7 @@ public:
     CPU(Bus& bus);
     ~CPU();
 
+    void init(CIC cic);
     void tick(std::size_t count);
     void tick();
 
