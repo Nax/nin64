@@ -116,6 +116,7 @@ CPU::CPU(Bus& bus, MIPSInterface& mi)
 , _pc{0xffffffffa4000040ull}
 , _pcNext{_pc + 4}
 , _regs{}
+, _fpuRegs{}
 , _llAddr{}
 , _epc{}
 , _errorEpc{}
@@ -125,6 +126,7 @@ CPU::CPU(Bus& bus, MIPSInterface& mi)
 , _exl{}
 , _ie{}
 , _llBit{}
+, _fpCompare{}
 , _count{}
 , _compare{}
 {
@@ -1188,9 +1190,9 @@ void CPU::tick()
     case 057: // CACHE
         break;
     case 060: // LL (Load Linked)
-        tmp           = _regs[RS].u32 + SIMM;
-        _regs[RT].i64 = (std::int32_t)_bus.read32(tmp);
-        _llAddr       = tmp;
+        tmp           = (_regs[RS].u32 + SIMM);
+        _regs[RT].i64 = (std::int32_t)_bus.read32((std::uint32_t)tmp);
+        _llAddr       = (std::uint32_t)tmp;
         _llBit        = true;
         break;
     case 061: // LWC1 (Load Word to FPU)
