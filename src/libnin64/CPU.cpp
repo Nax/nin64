@@ -180,8 +180,12 @@ void CPU::tick()
     if (_ie && !_erl && !_exl && (_im & (_ip | _mi.ip())))
     {
         std::printf("INTERRUPT !!!\n");
-        std::exit(3);
+        _exl    = true;
+        _epc    = (std::uint32_t)_pc;
+        _pc     = 0xffffffff80000180ull;
+        _pcNext = _pc + 4;
     }
+
     // For current tick
     op = _bus.read32((std::uint32_t)_pc);
     //std::printf("PC: 0x%016llx OP: 0x%08x Details:%02o %02o %02o %02o %02o %02o\n", _pc,  op, (op >> 26), ((op >> 21) & 0x1f), ((op >> 16) & 0x1f), ((op >> 11) & 0x1f), ((op >> 06) & 0x1f), ((op >> 00) & 0x3f));
