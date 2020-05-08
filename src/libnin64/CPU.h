@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <libnin64/CIC.h>
+#include <libnin64/MIPSInterface.h>
 #include <libnin64/NonCopyable.h>
 
 namespace libnin64
@@ -12,15 +13,15 @@ namespace libnin64
 class Bus;
 class CPU : private NonCopyable
 {
-  public:
-    CPU(Bus& bus);
+public:
+    CPU(Bus& bus, MIPSInterface& mi);
     ~CPU();
 
     void init(CIC cic);
     void tick(std::size_t count);
     void tick();
 
-  private:
+private:
     std::uint32_t cop0Read(std::uint8_t reg);
     void          cop0Write(std::uint8_t reg, std::uint32_t value);
     std::uint32_t fcrRead(std::uint8_t reg);
@@ -37,7 +38,8 @@ class CPU : private NonCopyable
         std::int8_t   i8;
     };
 
-    Bus& _bus;
+    Bus&           _bus;
+    MIPSInterface& _mi;
 
     std::uint64_t _pc;
     std::uint64_t _pcNext;

@@ -9,11 +9,12 @@ namespace libnin64
 
 class Memory;
 class Cart;
+class MIPSInterface;
 class PeripheralInterface;
 class Bus : private NonCopyable
 {
-  public:
-    Bus(Memory& memory, Cart& cart, PeripheralInterface& pi);
+public:
+    Bus(Memory& memory, Cart& cart, MIPSInterface& mi, PeripheralInterface& pi);
 
     template <typename T> T    read(std::uint32_t addr);
     template <typename T> void write(std::uint32_t addr, T value);
@@ -28,9 +29,10 @@ class Bus : private NonCopyable
     void write32(std::uint32_t addr, std::uint32_t value) { write<std::uint32_t>(addr, value); }
     void write64(std::uint32_t addr, std::uint64_t value) { write<std::uint64_t>(addr, value); }
 
-  private:
+private:
     Memory&              _memory;
     Cart&                _cart;
+    MIPSInterface&       _mi;
     PeripheralInterface& _pi;
 };
 

@@ -2,36 +2,37 @@
 #include <cstdlib>
 #include <libnin64/Bus.h>
 #include <libnin64/CPU.h>
+#include <libnin64/MIPSInterface.h>
 #include <libnin64/Util.h>
 
-#define COP0_REG_INDEX 0
-#define COP0_REG_RANDOM 1
+#define COP0_REG_INDEX    0
+#define COP0_REG_RANDOM   1
 #define COP0_REG_ENTRYLO0 2
 #define COP0_REG_ENTRYLO1 3
-#define COP0_REG_CONTEXT 4
+#define COP0_REG_CONTEXT  4
 #define COP0_REG_PAGEMASK 5
-#define COP0_REG_WIRED 6
+#define COP0_REG_WIRED    6
 #define COP0_REG_BADVADDR 8
-#define COP0_REG_COUNT 9
-#define COP0_REG_ENTRYHI 10
-#define COP0_REG_COMPARE 11
-#define COP0_REG_SR 12
-#define COP0_REG_CAUSE 13
-#define COP0_REG_EPC 14
-#define COP0_REG_PRID 15
-#define COP0_REG_CONFIG 16
-#define COP0_REG_LLADDR 17
-#define COP0_REG_WATCHLO 18
-#define COP0_REG_WATCHHI 19
+#define COP0_REG_COUNT    9
+#define COP0_REG_ENTRYHI  10
+#define COP0_REG_COMPARE  11
+#define COP0_REG_SR       12
+#define COP0_REG_CAUSE    13
+#define COP0_REG_EPC      14
+#define COP0_REG_PRID     15
+#define COP0_REG_CONFIG   16
+#define COP0_REG_LLADDR   17
+#define COP0_REG_WATCHLO  18
+#define COP0_REG_WATCHHI  19
 #define COP0_REG_XCONTEXT 20
-#define COP0_REG_PERR 26
+#define COP0_REG_PERR     26
 #define COP0_REG_CACHEERR 27
-#define COP0_REG_TAGLO 28
-#define COP0_REG_TAGHI 29
+#define COP0_REG_TAGLO    28
+#define COP0_REG_TAGHI    29
 #define COP0_REG_ERROREPC 30
 
 #define FCR_REVISION 0
-#define FCR_CONTROL 31
+#define FCR_CONTROL  31
 
 #define NOT_IMPLEMENTED()                                                                         \
     {                                                                                             \
@@ -46,21 +47,22 @@
         exit(1);                                                                                  \
     }
 
-#define RS ((std::uint8_t)((op >> 21) & 0x1f))
-#define RT ((std::uint8_t)((op >> 16) & 0x1f))
-#define RD ((std::uint8_t)((op >> 11) & 0x1f))
-#define FS RD
-#define SA ((std::uint8_t)((op >> 6) & 0x1f))
-#define IMM ((std::uint16_t)op)
-#define SIMM ((std::int16_t)op)
+#define RS          ((std::uint8_t)((op >> 21) & 0x1f))
+#define RT          ((std::uint8_t)((op >> 16) & 0x1f))
+#define RD          ((std::uint8_t)((op >> 11) & 0x1f))
+#define FS          RD
+#define SA          ((std::uint8_t)((op >> 6) & 0x1f))
+#define IMM         ((std::uint16_t)op)
+#define SIMM        ((std::int16_t)op)
 #define JUMP_TARGET ((std::uint32_t)op & 0x3ffffff)
 
 #define INT_TIMER 0x80
 
 using namespace libnin64;
 
-CPU::CPU(Bus& bus)
+CPU::CPU(Bus& bus, MIPSInterface& mi)
 : _bus{bus}
+, _mi{mi}
 , _pc{0xffffffffa4000040ull}
 , _pcNext{_pc + 4}
 , _regs{}
@@ -175,7 +177,7 @@ void CPU::tick()
     std::uint64_t tmp;
     std::uint64_t tmp2;
 
-    if (_ie && !_erl && !_exl && (_im & _ip))
+    if (_ie && !_erl && !_exl && (_im & (_ip | _mi.ip())))
     {
         std::printf("INTERRUPT !!!\n");
         std::exit(3);
@@ -898,17 +900,14 @@ std::uint32_t CPU::cop0Read(std::uint8_t reg)
         value = _compare;
         break;
     case COP0_REG_SR:
-        if (_ie) // TODO: Configure Clang Format
-            value |= 0x00000001;
-        if (_exl)
-            value |= 0x00000002;
-        if (_erl)
-            value |= 0x00000004;
+        if (_ie) value |= 0x00000001;
+        if (_exl) value |= 0x00000002;
+        if (_erl) value |= 0x00000004;
         value |= ((std::uint32_t)_im << 8);
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_CAUSE:
-        value |= (std::uint32_t)_ip << 8;
+        value |= (std::uint32_t)(_ip | _mi.ip()) << 8;
         break;
     case COP0_REG_EPC:
         value = _epc;

@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <libnin64/Cart.h>
+#include <libnin64/MIPSInterface.h>
 #include <libnin64/Memory.h>
 #include <libnin64/PeripheralInterface.h>
 
@@ -19,8 +20,9 @@
 
 using namespace libnin64;
 
-PeripheralInterface::PeripheralInterface(Memory& memory, Cart& cart)
-: _memory{memory}
+PeripheralInterface::PeripheralInterface(MIPSInterface& mi, Memory& memory, Cart& cart)
+: _mi{mi}
+, _memory{memory}
 , _cart{cart}
 , _dramAddr{}
 , _cartAddr{}
@@ -29,7 +31,6 @@ PeripheralInterface::PeripheralInterface(Memory& memory, Cart& cart)
 
 PeripheralInterface::~PeripheralInterface()
 {
-
 }
 
 std::uint32_t PeripheralInterface::read(std::uint32_t reg)
@@ -105,9 +106,11 @@ void PeripheralInterface::write(std::uint32_t reg, std::uint32_t value)
         std::puts("WRITE :: PI_WR_LEN_REG");
         std::printf("0x%08x 0x%08x 0x%08x\n", _dramAddr, _cartAddr, value);
         _cart.read(_memory.ram + _dramAddr, _cartAddr & 0x0fffffff, (value & 0xffffff) + 1);
+        _mi.setInterrupt(MI_INTR_PI);
         break;
     case PI_STATUS_REG:
         std::puts("WRITE :: PI_STATUS_REG");
+        if (value & (1 << 1)) _mi.clearInterrupt(MI_INTR_PI);
         break;
     case PI_BSD_DOM1_LAT_REG:
         std::puts("WRITE :: PI_BSD_DOM1_LAT_REG");

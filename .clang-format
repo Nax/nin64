@@ -1,16 +1,20 @@
 ---
 Language: Cpp
-BreakBeforeBraces: Allman
-IndentWidth: 4
-ColumnLimit: 0
-Cpp11BracedListStyle: true
-DerivePointerAlignment: false
-PointerAlignment: Left
-NamespaceIndentation: None
-BinPackArguments: false
-BinPackParameters: false
+
+AccessModifierOffset: -4
 AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: true
-ConstructorInitializerIndentWidth: 0
-BreakConstructorInitializersBeforeComma: true
+AlignConsecutiveMacros: true
+AllowShortIfStatementsOnASingleLine: true
 AlwaysBreakTemplateDeclarations: No
+BinPackArguments: false
+BinPackParameters: false
+BreakBeforeBraces: Allman
+BreakConstructorInitializersBeforeComma: true
+ColumnLimit: 0
+ConstructorInitializerIndentWidth: 0
+Cpp11BracedListStyle: true
+DerivePointerAlignment: false
+IndentWidth: 4
+NamespaceIndentation: None
+PointerAlignment: Left
