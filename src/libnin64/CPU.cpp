@@ -867,132 +867,150 @@ void CPU::tick()
                 _fpuRegs[FD].u64 = DtoL(_fpuRegs[FS].f64);
                 break;
 
+            // C.cond.fmt (Floating-point Compare)
+
             // 60: C.F
             case FMT_S | 060:
-                NOT_IMPLEMENTED();
+                _fpCompare = false;
                 break;
             case FMT_D | 060:
-                NOT_IMPLEMENTED();
+                _fpCompare = false;
                 break;
 
             // 61: C.UN
             case FMT_S | 061:
-                NOT_IMPLEMENTED();
+                _fpCompare = std::isnan(_fpuRegs[FS].f32) || std::isnan(_fpuRegs[FT].f32);
                 break;
             case FMT_D | 061:
-                NOT_IMPLEMENTED();
+                _fpCompare = std::isnan(_fpuRegs[FS].f64) || std::isnan(_fpuRegs[FT].f64);
                 break;
 
             // 62: C.EQ
             case FMT_S | 062:
-                NOT_IMPLEMENTED();
+                _fpCompare = _fpuRegs[FS].f32 == _fpuRegs[FT].f32;
                 break;
             case FMT_D | 062:
-                NOT_IMPLEMENTED();
+                _fpCompare = _fpuRegs[FS].f64 == _fpuRegs[FT].f64;
                 break;
 
             // 63: C.UEQ
             case FMT_S | 063:
-                NOT_IMPLEMENTED();
+                _fpCompare = std::isnan(_fpuRegs[FS].f32) || std::isnan(_fpuRegs[FT].f32) || (_fpuRegs[FS].f32 == _fpuRegs[FT].f32);
                 break;
             case FMT_D | 063:
-                NOT_IMPLEMENTED();
+                _fpCompare = std::isnan(_fpuRegs[FS].f64) || std::isnan(_fpuRegs[FT].f64) || (_fpuRegs[FS].f64 == _fpuRegs[FT].f64);
                 break;
 
             // 64: C.OLT
             case FMT_S | 064:
-                NOT_IMPLEMENTED();
+                _fpCompare = (_fpuRegs[FS].f32 < _fpuRegs[FT].f32);
                 break;
             case FMT_D | 064:
-                NOT_IMPLEMENTED();
+                _fpCompare = (_fpuRegs[FS].f64 < _fpuRegs[FT].f64);
                 break;
 
             // 65: C.ULT
             case FMT_S | 065:
-                NOT_IMPLEMENTED();
+                _fpCompare = std::isnan(_fpuRegs[FS].f32) || std::isnan(_fpuRegs[FT].f32) || (_fpuRegs[FS].f32 < _fpuRegs[FT].f32);
                 break;
             case FMT_D | 065:
-                NOT_IMPLEMENTED();
+                _fpCompare = std::isnan(_fpuRegs[FS].f64) || std::isnan(_fpuRegs[FT].f64) || (_fpuRegs[FS].f64 < _fpuRegs[FT].f64);
                 break;
 
             // 66: C.OLE
             case FMT_S | 066:
-                NOT_IMPLEMENTED();
+                _fpCompare = (_fpuRegs[FS].f32 <= _fpuRegs[FT].f32);
                 break;
             case FMT_D | 066:
-                NOT_IMPLEMENTED();
+                _fpCompare = (_fpuRegs[FS].f64 <= _fpuRegs[FT].f64);
                 break;
 
             // 67: C.ULE
             case FMT_S | 067:
-                NOT_IMPLEMENTED();
+                _fpCompare = std::isnan(_fpuRegs[FS].f32) || std::isnan(_fpuRegs[FT].f32) || (_fpuRegs[FS].f32 <= _fpuRegs[FT].f32);
                 break;
             case FMT_D | 067:
-                NOT_IMPLEMENTED();
+                _fpCompare = std::isnan(_fpuRegs[FS].f64) || std::isnan(_fpuRegs[FT].f64) || (_fpuRegs[FS].f64 <= _fpuRegs[FT].f64);
                 break;
 
             // 70: C.SF
             case FMT_S | 070:
-                NOT_IMPLEMENTED();
+                // TODO: Signals
+                _fpCompare = false;
                 break;
             case FMT_D | 070:
-                NOT_IMPLEMENTED();
+                // TODO: Signals
+                _fpCompare = false;
                 break;
 
             // 71: C.NGLE
             case FMT_S | 071:
-                NOT_IMPLEMENTED();
+                // TODO: Signals
+                _fpCompare = std::isnan(_fpuRegs[FS].f32) || std::isnan(_fpuRegs[FT].f32);
                 break;
             case FMT_D | 071:
-                NOT_IMPLEMENTED();
+                // TODO: Signals
+                _fpCompare = std::isnan(_fpuRegs[FS].f64) || std::isnan(_fpuRegs[FT].f64);
                 break;
 
             // 72: C.SEQ
             case FMT_S | 072:
-                NOT_IMPLEMENTED();
+                // TODO: Signals
+                _fpCompare = _fpuRegs[FS].f32 == _fpuRegs[FT].f32;
                 break;
             case FMT_D | 072:
-                NOT_IMPLEMENTED();
+                // TODO: Signals
+                _fpCompare = _fpuRegs[FS].f64 == _fpuRegs[FT].f64;
                 break;
 
             // 73: C.NGL
             case FMT_S | 073:
-                NOT_IMPLEMENTED();
+                // TODO: Signals
+                _fpCompare = std::isnan(_fpuRegs[FS].f32) || std::isnan(_fpuRegs[FT].f32) || (_fpuRegs[FS].f32 == _fpuRegs[FT].f32);
                 break;
             case FMT_D | 073:
-                NOT_IMPLEMENTED();
+                // TODO: Signals
+                _fpCompare = std::isnan(_fpuRegs[FS].f64) || std::isnan(_fpuRegs[FT].f64) || (_fpuRegs[FS].f64 == _fpuRegs[FT].f64);
                 break;
 
             // 74: C.LT
             case FMT_S | 074:
-                NOT_IMPLEMENTED();
+                // TODO: Signals
+                _fpCompare = (_fpuRegs[FS].f32 < _fpuRegs[FT].f32);
                 break;
             case FMT_D | 074:
-                NOT_IMPLEMENTED();
+                // TODO: Signals
+                _fpCompare = (_fpuRegs[FS].f64 < _fpuRegs[FT].f64);
                 break;
 
             // 75: C.NGE
             case FMT_S | 075:
-                NOT_IMPLEMENTED();
+                // TODO: Signals
+                _fpCompare = std::isnan(_fpuRegs[FS].f32) || std::isnan(_fpuRegs[FT].f32) || (_fpuRegs[FS].f32 < _fpuRegs[FT].f32);
                 break;
             case FMT_D | 075:
-                NOT_IMPLEMENTED();
+                // TODO: Signals
+                _fpCompare = std::isnan(_fpuRegs[FS].f64) || std::isnan(_fpuRegs[FT].f64) || (_fpuRegs[FS].f64 < _fpuRegs[FT].f64);
                 break;
 
             // 76: C.LE
             case FMT_S | 076:
-                NOT_IMPLEMENTED();
+                // TODO: Signals
+                _fpCompare = (_fpuRegs[FS].f32 <= _fpuRegs[FT].f32);
                 break;
             case FMT_D | 076:
-                NOT_IMPLEMENTED();
+                // TODO: Signals
+                _fpCompare = (_fpuRegs[FS].f64 <= _fpuRegs[FT].f64);
                 break;
 
             // 77: C.NGT
             case FMT_S | 077:
-                NOT_IMPLEMENTED();
+                // TODO: Signals
+                _fpCompare = std::isnan(_fpuRegs[FS].f32) || std::isnan(_fpuRegs[FT].f32) || (_fpuRegs[FS].f32 <= _fpuRegs[FT].f32);
                 break;
             case FMT_D | 077:
-                NOT_IMPLEMENTED();
+                // TODO: Signals
+                _fpCompare = std::isnan(_fpuRegs[FS].f64) || std::isnan(_fpuRegs[FT].f64) || (_fpuRegs[FS].f64 <= _fpuRegs[FT].f64);
                 break;
 
             default:
@@ -1001,7 +1019,6 @@ void CPU::tick()
             }
             break;
         default:
-            std::puts("WE ARE HERE.");
             NOT_IMPLEMENTED();
             break;
         }
