@@ -49,6 +49,7 @@
     }
 
 #define RS          ((std::uint8_t)((op >> 21) & 0x1f))
+#define BASE        RS
 #define FMT         RS
 #define RT          ((std::uint8_t)((op >> 16) & 0x1f))
 #define FT          RT
@@ -1192,8 +1193,8 @@ void CPU::tick()
         _llAddr       = tmp;
         _llBit        = true;
         break;
-    case 061: // LWC1
-        NOT_IMPLEMENTED();
+    case 061: // LWC1 (Load Word to FPU)
+        _fpuRegs[FT].u32 = _bus.read32(_regs[BASE].u32 + SIMM);
         break;
     case 062: // LWC2
         NOT_IMPLEMENTED();
@@ -1201,8 +1202,8 @@ void CPU::tick()
     case 064: // LLD
         NOT_IMPLEMENTED();
         break;
-    case 065: // LDC1
-        NOT_IMPLEMENTED();
+    case 065: // LDC1 (Load Doubleword to FPU)
+        _fpuRegs[FT].u64 = _bus.read64(_regs[BASE].u32 + SIMM);
         break;
     case 066: // LDC2
         NOT_IMPLEMENTED();
@@ -1213,8 +1214,8 @@ void CPU::tick()
     case 070: // SC (Store Conditional)
         NOT_IMPLEMENTED();
         break;
-    case 071: // SWC1
-        NOT_IMPLEMENTED();
+    case 071: // SWC1 (Store Word From FPU)
+        _bus.write32(_regs[BASE].u32 + SIMM, _fpuRegs[FT].u32);
         break;
     case 072: // SWC2
         NOT_IMPLEMENTED();
@@ -1222,8 +1223,8 @@ void CPU::tick()
     case 074: // SCD (Store Conditional Doubleword)
         NOT_IMPLEMENTED();
         break;
-    case 075: // SDC1 (Store Doubleword From Coprocessor 1)
-        NOT_IMPLEMENTED();
+    case 075: // SDC1 (Store Doubleword From FPU)
+        _bus.write64(_regs[BASE].u32 + SIMM, _fpuRegs[FT].u64);
         break;
     case 076: // SDC2 (Store Doubleword From Coprocessor 2)
         NOT_IMPLEMENTED();
@@ -1241,8 +1242,6 @@ void CPU::tick()
     if (_count == _compare)
     {
         _ip |= INT_TIMER;
-        std::printf("COUNT == COMPARE!\n");
-        std::exit(4);
     }
 }
 
