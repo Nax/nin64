@@ -1,3 +1,4 @@
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <libnin64/Bus.h>
@@ -48,13 +49,21 @@
     }
 
 #define RS          ((std::uint8_t)((op >> 21) & 0x1f))
+#define FMT         RS
 #define RT          ((std::uint8_t)((op >> 16) & 0x1f))
+#define FT          RT
 #define RD          ((std::uint8_t)((op >> 11) & 0x1f))
 #define FS          RD
 #define SA          ((std::uint8_t)((op >> 6) & 0x1f))
+#define FD          SA
 #define IMM         ((std::uint16_t)op)
 #define SIMM        ((std::int16_t)op)
 #define JUMP_TARGET ((std::uint32_t)op & 0x3ffffff)
+
+#define FMT_S (16 << 6)
+#define FMT_D (17 << 6)
+#define FMT_W (20 << 6)
+#define FMT_L (21 << 6)
 
 #define INT_TIMER 0x80
 
@@ -598,22 +607,22 @@ void CPU::tick()
     case 021: // COP1 (Coprocessor 1)
         switch (RS)
         {
-        case 000: // MF
-            NOT_IMPLEMENTED();
+        case 000: // MFC1 (Move Word From FPU)
+            _regs[RT].u32 = _fpuRegs[FS].u32;
             break;
-        case 001: // DMF
-            NOT_IMPLEMENTED();
+        case 001: // DMFC1 (Doubleword Move From FPU)
+            _regs[RT].u64 = _fpuRegs[FS].u64;
             break;
-        case 002: // CF (Move Control From FPU)
+        case 002: // CFC1 (Move Control From FPU)
             _regs[RT].i64 = (std::int32_t)fcrRead(FS);
             break;
-        case 004: // MT
-            NOT_IMPLEMENTED();
+        case 004: // MTC1 (Move To FPU)
+            _fpuRegs[FS].u32 = _regs[RT].u32;
             break;
-        case 005: // DMT
-            NOT_IMPLEMENTED();
+        case 005: // DMTC1 (Doubleword Move To FPU)
+            _fpuRegs[FS].u64 = _regs[RT].u64;
             break;
-        case 006: // CT (Move Control Word To FPU)
+        case 006: // CTC1 (Move Control Word To FPU)
             fcrWrite(FS, _regs[RT].u32);
             break;
         case 010: // BC
@@ -630,7 +639,273 @@ void CPU::tick()
             }
             NOT_IMPLEMENTED();
             break;
+        case 020:
+        case 021:
+        case 022:
+        case 023:
+        case 024:
+        case 025:
+        case 026:
+        case 027:
+        case 030:
+        case 031:
+        case 032:
+        case 033:
+        case 034:
+        case 035:
+        case 036:
+        case 037: // CO
+            /*
+             * FMT values:
+             * 0x10
+             */
+            switch (((std::uint16_t)FMT << 6) | (op & 0x77))
+            {
+            // 00: ADD.fmt
+            case FMT_S | 000: // ADD.S
+                _fpuRegs[FD].f32 = _fpuRegs[FS].f32 + _fpuRegs[FT].f32;
+                break;
+            case FMT_D | 000: // ADD.D
+                _fpuRegs[FD].f64 = _fpuRegs[FS].f64 + _fpuRegs[FT].f64;
+                break;
+
+            // 01: SUB.fmt
+            case FMT_S | 001: // SUB.S
+                _fpuRegs[FD].f32 = _fpuRegs[FS].f32 - _fpuRegs[FT].f32;
+                break;
+            case FMT_D | 001: // SUB.D
+                _fpuRegs[FD].f64 = _fpuRegs[FS].f64 - _fpuRegs[FT].f64;
+                break;
+
+            // 02: MUL.fmt
+            case FMT_S | 002: // MUL.S
+                _fpuRegs[FD].f32 = _fpuRegs[FS].f32 * _fpuRegs[FT].f32;
+                break;
+            case FMT_D | 002: // MUL.D
+                _fpuRegs[FD].f64 = _fpuRegs[FS].f64 * _fpuRegs[FT].f64;
+                break;
+
+            // 03: DIV.fmt
+            case FMT_S | 003: // DIV.S
+                _fpuRegs[FD].f32 = _fpuRegs[FS].f32 / _fpuRegs[FT].f32;
+                break;
+            case FMT_D | 003: // DIV.D
+                _fpuRegs[FD].f64 = _fpuRegs[FS].f64 / _fpuRegs[FT].f64;
+                break;
+
+            // 04: SQRT.fmt
+            case FMT_S | 004: // SQRT.S
+                _fpuRegs[FD].f32 = std::sqrtf(_fpuRegs[FS].f32);
+                break;
+            case FMT_D | 004: // SQRT.D
+                _fpuRegs[FD].f64 = std::sqrt(_fpuRegs[FS].f64);
+                break;
+
+            // 05: ABS.fmt
+            case FMT_S | 005: // ABS.S
+                _fpuRegs[FD].f32 = std::fabs(_fpuRegs[FS].f32);
+                break;
+            case FMT_D | 005: // ABS.D
+                _fpuRegs[FD].f64 = std::abs(_fpuRegs[FS].f64);
+                break;
+
+            // 06: MOV.fmt
+            case FMT_S | 006:
+                _fpuRegs[FD].f32 = _fpuRegs[FS].f32;
+                break;
+            case FMT_D | 006:
+                _fpuRegs[FD].f64 = _fpuRegs[FS].f64;
+                break;
+
+            // 07: NEG
+            case FMT_S | 007:
+                _fpuRegs[FD].f32 = -_fpuRegs[FS].f32;
+                break;
+            case FMT_D | 007:
+                _fpuRegs[FD].f64 = -_fpuRegs[FS].f64;
+                break;
+
+            // 10: ROUND.L
+            case FMT_S | 010:
+                break;
+            case FMT_D | 010:
+                break;
+
+            // 11: TRUNC.L
+            case FMT_S | 011:
+                break;
+            case FMT_D | 011:
+                break;
+
+            // 12: CEIL.L
+            case FMT_S | 012:
+                break;
+            case FMT_D | 012:
+                break;
+
+            // 13: FLOOR.L
+            case FMT_S | 013:
+                break;
+            case FMT_D | 013:
+                break;
+
+            // 14: ROUND.W
+            case FMT_S | 014:
+                break;
+            case FMT_D | 014:
+                break;
+
+            // 15: TRUNC.W
+            case FMT_S | 015:
+                break;
+            case FMT_D | 015:
+                break;
+
+            // 16: CEIL.W
+            case FMT_S | 016:
+                break;
+            case FMT_D | 016:
+                break;
+
+            // 17: FLOOR.W
+            case FMT_S | 017:
+                break;
+            case FMT_D | 017:
+                break;
+
+            // 40: CVT.S
+            case FMT_S | 040:
+                // SAME
+                break;
+            case FMT_D | 040:
+                break;
+            case FMT_W | 040:
+                break;
+            case FMT_L | 040:
+                break;
+
+            // 41: CVT.D
+            case FMT_S | 041:
+                break;
+            case FMT_D | 041:
+                // SAME
+                break;
+            case FMT_W | 041:
+                break;
+            case FMT_L | 041:
+                break;
+
+            // 44: CVT.W
+            case FMT_S | 044:
+                break;
+            case FMT_D | 044:
+                break;
+
+            // 45: CVT.Lh
+            case FMT_S | 045:
+                break;
+            case FMT_D | 045:
+                break;
+
+            // 60: C.F
+            case FMT_S | 060:
+                break;
+            case FMT_D | 060:
+                break;
+
+            // 61: C.UN
+            case FMT_S | 061:
+                break;
+            case FMT_D | 061:
+                break;
+
+            // 62: C.EQ
+            case FMT_S | 062:
+                break;
+            case FMT_D | 062:
+                break;
+
+            // 63: C.UEQ
+            case FMT_S | 063:
+                break;
+            case FMT_D | 063:
+                break;
+
+            // 64: C.OLT
+            case FMT_S | 064:
+                break;
+            case FMT_D | 064:
+                break;
+
+            // 65: C.ULT
+            case FMT_S | 065:
+                break;
+            case FMT_D | 065:
+                break;
+
+            // 66: C.OLE
+            case FMT_S | 066:
+                break;
+            case FMT_D | 066:
+                break;
+
+            // 67: C.ULE
+            case FMT_S | 067:
+                break;
+            case FMT_D | 067:
+                break;
+
+            // 70: C.SF
+            case FMT_S | 070:
+                break;
+            case FMT_D | 070:
+                break;
+
+            // 71: C.NGLE
+            case FMT_S | 071:
+                break;
+            case FMT_D | 071:
+                break;
+
+            // 72: C.SEQ
+            case FMT_S | 072:
+                break;
+            case FMT_D | 072:
+                break;
+
+            // 73: C.NGL
+            case FMT_S | 073:
+                break;
+            case FMT_D | 073:
+                break;
+
+            // 74: C.LT
+            case FMT_S | 074:
+                break;
+            case FMT_D | 074:
+                break;
+
+            // 75: C.NGE
+            case FMT_S | 075:
+                break;
+            case FMT_D | 075:
+                break;
+
+            // 76: C.LE
+            case FMT_S | 076:
+                break;
+            case FMT_D | 076:
+                break;
+
+            // 77: C.NGT
+            case FMT_S | 077:
+                break;
+            case FMT_D | 077:
+                break;
+            }
+            break;
         default:
+            std::puts("WE ARE HERE.");
             NOT_IMPLEMENTED();
             break;
         }

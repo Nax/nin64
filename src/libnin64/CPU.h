@@ -36,6 +36,8 @@ private:
         std::int16_t  i16;
         std::uint8_t  u8;
         std::int8_t   i8;
+        float         f32;
+        double        f64;
     };
 
     Bus&           _bus;
@@ -44,6 +46,7 @@ private:
     std::uint64_t _pc;
     std::uint64_t _pcNext;
     Reg           _regs[32];
+    Reg           _fpuRegs[32];
     Reg           _lo;
     Reg           _hi;
     std::uint32_t _llAddr;
