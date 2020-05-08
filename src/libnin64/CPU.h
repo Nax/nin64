@@ -59,6 +59,8 @@ private:
     bool          _ie : 1;
     bool          _llBit : 1;
     bool          _fpCompare : 1;
+    bool          _branchDelay : 1;
+    bool          _bd : 1;
     std::uint32_t _count;
     std::uint32_t _compare;
 };

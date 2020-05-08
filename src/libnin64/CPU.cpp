@@ -127,6 +127,8 @@ CPU::CPU(Bus& bus, MIPSInterface& mi)
 , _ie{}
 , _llBit{}
 , _fpCompare{}
+, _branchDelay{}
+, _bd{}
 , _count{}
 , _compare{}
 {
@@ -232,10 +234,12 @@ void CPU::tick()
     if (_ie && !_erl && !_exl && (_im & (_ip | _mi.ip())))
     {
         std::printf("INTERRUPT !!!\n");
-        _exl    = true;
-        _epc    = (std::uint32_t)_pc;
-        _pc     = 0xffffffff80000180ull;
-        _pcNext = _pc + 4;
+        _bd          = _branchDelay;
+        _branchDelay = false;
+        _exl         = true;
+        _epc         = (std::uint32_t)_pc - (_bd ? 4 : 0);
+        _pc          = 0xffffffff80000180ull;
+        _pcNext      = _pc + 4;
     }
 
     // For current tick
@@ -246,6 +250,7 @@ void CPU::tick()
     // For next tick
     _pc = _pcNext;
     _pcNext += 4;
+    _branchDelay = false;
 
     switch (op >> 26)
     {
@@ -428,19 +433,22 @@ void CPU::tick()
         case 000: // BLTZ
             if (_regs[RS].i64 < 0)
             {
-                _pcNext = _pc + ((std::int64_t)SIMM << 2);
+                _pcNext      = _pc + ((std::int64_t)SIMM << 2);
+                _branchDelay = true;
             }
             break;
         case 001: // BGEZ
             if (_regs[RS].i64 >= 0)
             {
-                _pcNext = _pc + ((std::int64_t)SIMM << 2);
+                _pcNext      = _pc + ((std::int64_t)SIMM << 2);
+                _branchDelay = true;
             }
             break;
         case 002: // BLTZL
             if (_regs[RS].i64 < 0)
             {
-                _pcNext = _pc + ((std::int64_t)SIMM << 2);
+                _pcNext      = _pc + ((std::int64_t)SIMM << 2);
+                _branchDelay = true;
             }
             else
             {
@@ -451,7 +459,8 @@ void CPU::tick()
         case 003: // BGEZL (Branch On Greater Than Or Equal To Zero Likely)
             if (_regs[RS].i64 >= 0)
             {
-                _pcNext = _pc + ((std::int64_t)SIMM << 2);
+                _pcNext      = _pc + ((std::int64_t)SIMM << 2);
+                _branchDelay = true;
             }
             else
             {
@@ -481,21 +490,24 @@ void CPU::tick()
             _regs[31].u64 = _pc + 4;
             if (_regs[RS].i64 < 0)
             {
-                _pcNext = _pc + ((std::int64_t)SIMM << 2);
+                _pcNext      = _pc + ((std::int64_t)SIMM << 2);
+                _branchDelay = true;
             }
             break;
         case 021: // BGEZAL (Branch On Greater Than Or Equal To Zero And Link Likely)
             _regs[31].u64 = _pc + 4;
             if (_regs[RS].i64 >= 0)
             {
-                _pcNext = _pc + ((std::int64_t)SIMM << 2);
+                _pcNext      = _pc + ((std::int64_t)SIMM << 2);
+                _branchDelay = true;
             }
             break;
         case 022: // BLTZALL
             _regs[31].u64 = _pc + 4;
             if (_regs[RS].i64 < 0)
             {
-                _pcNext = _pc + ((std::int64_t)SIMM << 2);
+                _pcNext      = _pc + ((std::int64_t)SIMM << 2);
+                _branchDelay = true;
             }
             else
             {
@@ -507,7 +519,8 @@ void CPU::tick()
             _regs[31].u64 = _pc + 4;
             if (_regs[RS].i64 >= 0)
             {
-                _pcNext = _pc + ((std::int64_t)SIMM << 2);
+                _pcNext      = _pc + ((std::int64_t)SIMM << 2);
+                _branchDelay = true;
             }
             else
             {
@@ -521,34 +534,40 @@ void CPU::tick()
         }
         break;
     case 002: // J (Jump)
-        _pcNext = ((std::uint64_t)JUMP_TARGET << 2) | (_pc & 0xfffffffff0000000ULL);
+        _pcNext      = ((std::uint64_t)JUMP_TARGET << 2) | (_pc & 0xfffffffff0000000ULL);
+        _branchDelay = true;
         break;
     case 003: // JAL (Jump And Link)
         _pcNext       = ((std::uint64_t)JUMP_TARGET << 2) | (_pc & 0xfffffffff0000000ULL);
+        _branchDelay  = true;
         _regs[31].u64 = _pc + 4;
         break;
     case 004: // BEQ
         if (_regs[RS].u64 == _regs[RT].u64)
         {
-            _pcNext = _pc + ((std::int64_t)SIMM << 2);
+            _pcNext      = _pc + ((std::int64_t)SIMM << 2);
+            _branchDelay = true;
         }
         break;
     case 005: // BNE
         if (_regs[RS].u64 != _regs[RT].u64)
         {
-            _pcNext = _pc + ((std::int64_t)SIMM << 2);
+            _pcNext      = _pc + ((std::int64_t)SIMM << 2);
+            _branchDelay = true;
         }
         break;
     case 006: // BLEZ
         if (_regs[RS].i64 <= 0)
         {
-            _pcNext = _pc + ((std::int64_t)SIMM << 2);
+            _pcNext      = _pc + ((std::int64_t)SIMM << 2);
+            _branchDelay = true;
         }
         break;
     case 007: // BGTZ
         if (_regs[RS].i64 > 0)
         {
-            _pcNext = _pc + ((std::int64_t)SIMM << 2);
+            _pcNext      = _pc + ((std::int64_t)SIMM << 2);
+            _branchDelay = true;
         }
         break;
     case 010: // ADDI (Add Immediate)
@@ -1032,7 +1051,8 @@ void CPU::tick()
     case 024: // BEQL
         if (_regs[RS].u64 == _regs[RT].u64)
         {
-            _pcNext = _pc + ((std::int64_t)SIMM << 2);
+            _pcNext      = _pc + ((std::int64_t)SIMM << 2);
+            _branchDelay = true;
         }
         else
         {
@@ -1043,7 +1063,8 @@ void CPU::tick()
     case 025: // BNEL
         if (_regs[RS].u64 != _regs[RT].u64)
         {
-            _pcNext = _pc + ((std::int64_t)SIMM << 2);
+            _pcNext      = _pc + ((std::int64_t)SIMM << 2);
+            _branchDelay = true;
         }
         else
         {
@@ -1054,7 +1075,8 @@ void CPU::tick()
     case 026: // BLEZL
         if (_regs[RS].i64 <= 0)
         {
-            _pcNext = _pc + ((std::int64_t)SIMM << 2);
+            _pcNext      = _pc + ((std::int64_t)SIMM << 2);
+            _branchDelay = true;
         }
         else
         {
@@ -1065,7 +1087,8 @@ void CPU::tick()
     case 027: // BGTZL (Branch On Greater Than Zero Likely)
         if (_regs[RS].i64 > 0)
         {
-            _pcNext = _pc + ((std::int64_t)SIMM << 2);
+            _pcNext      = _pc + ((std::int64_t)SIMM << 2);
+            _branchDelay = true;
         }
         else
         {
@@ -1301,6 +1324,7 @@ std::uint32_t CPU::cop0Read(std::uint8_t reg)
         break;
     case COP0_REG_CAUSE:
         value |= (std::uint32_t)(_ip | _mi.ip()) << 8;
+        if (_bd) value |= 0x80000000;
         break;
     case COP0_REG_EPC:
         value = _epc;
