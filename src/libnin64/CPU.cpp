@@ -1170,7 +1170,23 @@ void CPU::tick()
         _bus.write16(_regs[RS].u32 + SIMM, _regs[RT].u16);
         break;
     case 052: // SWL (Store Word Left)
-        NOT_IMPLEMENTED();
+        tmp  = _regs[RS].u32 + SIMM;
+        tmp2 = _bus.read32(tmp & ~0x3);
+        switch (tmp & 0x3)
+        {
+        case 0x00:
+            _bus.write32(tmp & ~0x3, _regs[RT].u32);
+            break;
+        case 0x01:
+            _bus.write32(tmp & ~0x3, (_regs[RT].u32 >> 8) | (tmp2 & 0xff000000));
+            break;
+        case 0x02:
+            _bus.write32(tmp & ~0x3, (_regs[RT].u32 >> 16) | (tmp2 & 0xffff0000));
+            break;
+        case 0x03:
+            _bus.write32(tmp & ~0x3, (_regs[RT].u32 >> 24) | (tmp2 & 0xffffff00));
+            break;
+        }
         break;
     case 053: // SW (Store Word)
         _bus.write32(_regs[RS].u32 + SIMM, _regs[RT].u32);
@@ -1210,7 +1226,23 @@ void CPU::tick()
         }
         break;
     case 056: // SWR (Store Word Right)
-        NOT_IMPLEMENTED();
+        tmp  = _regs[RS].u32 + SIMM;
+        tmp2 = _bus.read32(tmp & ~0x3);
+        switch (tmp & 0x3)
+        {
+        case 0x00:
+            _bus.write32(tmp & ~0x3, ((_regs[RT].u32 & 0xff) << 24) | (tmp2 & 0x00ffffff));
+            break;
+        case 0x01:
+            _bus.write32(tmp & ~0x3, ((_regs[RT].u32 & 0xffff) << 16) | (tmp2 & 0x0000ffff));
+            break;
+        case 0x02:
+            _bus.write32(tmp & ~0x3, ((_regs[RT].u32 & 0xffffff) << 8) | (tmp2 & 0x000000ff));
+            break;
+        case 0x03:
+            _bus.write32(tmp & ~0x3, _regs[RT].u32);
+            break;
+        }
         break;
     case 057: // CACHE
         break;
