@@ -24,6 +24,16 @@ public:
 private:
     std::uint32_t cop0Read(std::uint8_t reg);
     void          cop0Write(std::uint8_t reg, std::uint32_t value);
+
+    std::uint32_t fpuReadU32(std::uint8_t reg);
+    std::uint64_t fpuReadU64(std::uint8_t reg);
+    float         fpuReadF32(std::uint8_t reg);
+    double        fpuReadF64(std::uint8_t reg);
+    void          fpuWriteU32(std::uint8_t reg, std::uint32_t value);
+    void          fpuWriteU64(std::uint8_t reg, std::uint64_t value);
+    void          fpuWriteF32(std::uint8_t reg, float value);
+    void          fpuWriteF64(std::uint8_t reg, double value);
+
     std::uint32_t fcrRead(std::uint8_t reg);
     void          fcrWrite(std::uint8_t reg, std::uint32_t value);
 
@@ -61,6 +71,7 @@ private:
     bool          _fpCompare : 1;
     bool          _branchDelay : 1;
     bool          _bd : 1;
+    bool          _fr : 1;
     std::uint32_t _count;
     std::uint32_t _compare;
 };

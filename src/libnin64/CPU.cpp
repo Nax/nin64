@@ -1,6 +1,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <libnin64/Bus.h>
 #include <libnin64/CPU.h>
 #include <libnin64/MIPSInterface.h>
@@ -129,6 +130,7 @@ CPU::CPU(Bus& bus, MIPSInterface& mi)
 , _fpCompare{}
 , _branchDelay{}
 , _bd{}
+, _fr{}
 , _count{}
 , _compare{}
 {
@@ -670,19 +672,19 @@ void CPU::tick()
         switch (RS)
         {
         case 000: // MFC1 (Move Word From FPU)
-            _regs[RT].u32 = _fpuRegs[FS].u32;
+            _regs[RT].u32 = fpuReadU32(FS);
             break;
         case 001: // DMFC1 (Doubleword Move From FPU)
-            _regs[RT].u64 = _fpuRegs[FS].u64;
+            _regs[RT].u64 = fpuReadU64(FS);
             break;
         case 002: // CFC1 (Move Control From FPU)
             _regs[RT].i64 = (std::int32_t)fcrRead(FS);
             break;
         case 004: // MTC1 (Move To FPU)
-            _fpuRegs[FS].u32 = _regs[RT].u32;
+            fpuWriteU32(FS, _regs[RT].u32);
             break;
         case 005: // DMTC1 (Doubleword Move To FPU)
-            _fpuRegs[FS].u64 = _regs[RT].u64;
+            fpuWriteU64(FS, _regs[RT].u64);
             break;
         case 006: // CTC1 (Move Control Word To FPU)
             fcrWrite(FS, _regs[RT].u32);
@@ -725,168 +727,168 @@ void CPU::tick()
             {
             // 00: ADD.fmt
             case FMT_S | 000: // ADD.S
-                _fpuRegs[FD].f32 = _fpuRegs[FS].f32 + _fpuRegs[FT].f32;
+                fpuWriteF32(FD, fpuReadF32(FS) + fpuReadF32(FT));
                 break;
             case FMT_D | 000: // ADD.D
-                _fpuRegs[FD].f64 = _fpuRegs[FS].f64 + _fpuRegs[FT].f64;
+                fpuWriteF64(FD, fpuReadF64(FS) + fpuReadF64(FT));
                 break;
 
             // 01: SUB.fmt
             case FMT_S | 001: // SUB.S
-                _fpuRegs[FD].f32 = _fpuRegs[FS].f32 - _fpuRegs[FT].f32;
+                fpuWriteF32(FD, fpuReadF32(FS) - fpuReadF32(FT));
                 break;
             case FMT_D | 001: // SUB.D
-                _fpuRegs[FD].f64 = _fpuRegs[FS].f64 - _fpuRegs[FT].f64;
+                fpuWriteF64(FD, fpuReadF64(FS) - fpuReadF64(FT));
                 break;
 
             // 02: MUL.fmt
             case FMT_S | 002: // MUL.S
-                _fpuRegs[FD].f32 = _fpuRegs[FS].f32 * _fpuRegs[FT].f32;
+                fpuWriteF32(FD, fpuReadF32(FS) * fpuReadF32(FT));
                 break;
             case FMT_D | 002: // MUL.D
-                _fpuRegs[FD].f64 = _fpuRegs[FS].f64 * _fpuRegs[FT].f64;
+                fpuWriteF64(FD, fpuReadF64(FS) * fpuReadF64(FT));
                 break;
 
             // 03: DIV.fmt
             case FMT_S | 003: // DIV.S
-                _fpuRegs[FD].f32 = _fpuRegs[FS].f32 / _fpuRegs[FT].f32;
+                fpuWriteF32(FD, fpuReadF32(FS) / fpuReadF32(FT));
                 break;
             case FMT_D | 003: // DIV.D
-                _fpuRegs[FD].f64 = _fpuRegs[FS].f64 / _fpuRegs[FT].f64;
+                fpuWriteF64(FD, fpuReadF64(FS) / fpuReadF64(FT));
                 break;
 
             // 04: SQRT.fmt
             case FMT_S | 004: // SQRT.S
-                _fpuRegs[FD].f32 = std::sqrtf(_fpuRegs[FS].f32);
+                fpuWriteF32(FD, std::sqrtf(fpuReadF32(FS)));
                 break;
             case FMT_D | 004: // SQRT.D
-                _fpuRegs[FD].f64 = std::sqrt(_fpuRegs[FS].f64);
+                fpuWriteF64(FD, std::sqrt(fpuReadF64(FS)));
                 break;
 
             // 05: ABS.fmt
             case FMT_S | 005: // ABS.S
-                _fpuRegs[FD].f32 = std::fabs(_fpuRegs[FS].f32);
+                fpuWriteF32(FD, std::fabs(fpuReadF32(FS)));
                 break;
             case FMT_D | 005: // ABS.D
-                _fpuRegs[FD].f64 = std::abs(_fpuRegs[FS].f64);
+                fpuWriteF64(FD, std::abs(fpuReadF64(FS)));
                 break;
 
             // 06: MOV.fmt
             case FMT_S | 006:
-                _fpuRegs[FD].f32 = _fpuRegs[FS].f32;
+                fpuWriteF32(FD, fpuReadF32(FS));
                 break;
             case FMT_D | 006:
-                _fpuRegs[FD].f64 = _fpuRegs[FS].f64;
+                fpuWriteF64(FD, fpuReadF64(FS));
                 break;
 
             // 07: NEG
             case FMT_S | 007:
-                _fpuRegs[FD].f32 = -_fpuRegs[FS].f32;
+                fpuWriteF32(FD, -fpuReadF32(FS));
                 break;
             case FMT_D | 007:
-                _fpuRegs[FD].f64 = -_fpuRegs[FS].f64;
+                fpuWriteF64(FD, -fpuReadF64(FS));
                 break;
 
             // 10: ROUND.L
             case FMT_S | 010:
-                _fpuRegs[FD].u64 = StoL(std::roundf(_fpuRegs[FS].f32));
+                fpuWriteU64(FD, StoL(std::roundf(fpuReadF32(FS))));
                 break;
             case FMT_D | 010:
-                _fpuRegs[FD].u64 = DtoL(std::round(_fpuRegs[FS].f64));
+                fpuWriteU64(FD, DtoL(std::round(fpuReadF64(FS))));
                 break;
 
             // 11: TRUNC.L
             case FMT_S | 011:
-                _fpuRegs[FD].u64 = StoL(std::truncf(_fpuRegs[FS].f32));
+                fpuWriteU64(FD, StoL(std::truncf(fpuReadF32(FS))));
                 break;
             case FMT_D | 011:
-                _fpuRegs[FD].u64 = DtoL(std::trunc(_fpuRegs[FS].f64));
+                fpuWriteU64(FD, DtoL(std::trunc(fpuReadF64(FS))));
                 break;
 
             // 12: CEIL.L
             case FMT_S | 012:
-                _fpuRegs[FD].u64 = StoL(std::ceilf(_fpuRegs[FS].f32));
+                fpuWriteU64(FD, StoL(std::ceilf(fpuReadF32(FS))));
                 break;
             case FMT_D | 012:
-                _fpuRegs[FD].u64 = DtoL(std::ceil(_fpuRegs[FS].f64));
+                fpuWriteU64(FD, DtoL(std::ceil(fpuReadF64(FS))));
                 break;
 
             // 13: FLOOR.L
             case FMT_S | 013:
-                _fpuRegs[FD].u64 = StoL(std::floorf(_fpuRegs[FS].f32));
+                fpuWriteU64(FD, StoL(std::floorf(fpuReadF32(FS))));
                 break;
             case FMT_D | 013:
-                _fpuRegs[FD].u64 = DtoL(std::floor(_fpuRegs[FS].f64));
+                fpuWriteU64(FD, DtoL(std::floor(fpuReadF64(FS))));
                 break;
 
             // 14: ROUND.W
             case FMT_S | 014:
-                _fpuRegs[FD].u32 = StoW(std::roundf(_fpuRegs[FS].f32));
+                fpuWriteU32(FD, StoW(std::roundf(fpuReadF32(FS))));
                 break;
             case FMT_D | 014:
-                _fpuRegs[FD].u32 = DtoW(std::round(_fpuRegs[FS].f64));
+                fpuWriteU32(FD, DtoW(std::round(fpuReadF64(FS))));
                 break;
 
             // 15: TRUNC.W
             case FMT_S | 015:
-                _fpuRegs[FD].u32 = StoW(std::truncf(_fpuRegs[FS].f32));
+                fpuWriteU32(FD, StoW(std::truncf(fpuReadF32(FS))));
                 break;
             case FMT_D | 015:
-                _fpuRegs[FD].u32 = DtoW(std::trunc(_fpuRegs[FS].f64));
+                fpuWriteU32(FD, DtoW(std::trunc(fpuReadF64(FS))));
                 break;
 
             // 16: CEIL.W
             case FMT_S | 016:
-                _fpuRegs[FD].u32 = StoW(std::ceilf(_fpuRegs[FS].f32));
+                fpuWriteU32(FD, StoW(std::ceilf(fpuReadF32(FS))));
                 break;
             case FMT_D | 016:
-                _fpuRegs[FD].u32 = DtoW(std::ceil(_fpuRegs[FS].f64));
+                fpuWriteU32(FD, DtoW(std::ceil(fpuReadF64(FS))));
                 break;
 
             // 17: FLOOR.W
             case FMT_S | 017:
-                _fpuRegs[FD].u32 = StoW(std::floorf(_fpuRegs[FS].f32));
+                fpuWriteU32(FD, StoW(std::floorf(fpuReadF32(FS))));
                 break;
             case FMT_D | 017:
-                _fpuRegs[FD].u32 = DtoW(std::floor(_fpuRegs[FS].f64));
+                fpuWriteU32(FD, DtoW(std::floor(fpuReadF64(FS))));
                 break;
 
             // 40: CVT.S
             case FMT_D | 040:
-                _fpuRegs[FD].f32 = (float)_fpuRegs[FS].f64;
+                fpuWriteF32(FD, (float)fpuReadF64(FS));
                 break;
             case FMT_W | 040:
-                _fpuRegs[FD].f32 = WtoS(_fpuRegs[FS].u32);
+                fpuWriteF32(FD, WtoS(fpuReadU32(FS)));
                 break;
             case FMT_L | 040:
-                _fpuRegs[FD].f32 = LtoS(_fpuRegs[FS].u64);
+                fpuWriteF32(FD, LtoS(fpuReadU64(FS)));
                 break;
 
             // 41: CVT.D
             case FMT_S | 041:
-                _fpuRegs[FD].f64 = (double)_fpuRegs[FS].f32;
+                fpuWriteF64(FD, (double)fpuReadF32(FS));
                 break;
             case FMT_W | 041:
-                _fpuRegs[FD].f64 = WtoD(_fpuRegs[FS].u32);
+                fpuWriteF64(FD, WtoD(fpuReadU32(FS)));
                 break;
             case FMT_L | 041:
-                _fpuRegs[FD].f64 = LtoD(_fpuRegs[FS].u64);
+                fpuWriteF64(FD, LtoD(fpuReadU64(FS)));
                 break;
 
             // 44: CVT.W
             case FMT_S | 044:
-                _fpuRegs[FD].u32 = StoW(_fpuRegs[FS].f32);
+                fpuWriteU32(FD, StoW(fpuReadF32(FS)));
                 break;
             case FMT_D | 044:
-                _fpuRegs[FD].u32 = DtoW(_fpuRegs[FS].f64);
+                fpuWriteU32(FD, DtoW(fpuReadF64(FS)));
                 break;
 
             // 45: CVT.L
             case FMT_S | 045:
-                _fpuRegs[FD].u64 = StoL(_fpuRegs[FS].f32);
+                fpuWriteU64(FD, StoL(fpuReadF32(FS)));
                 break;
             case FMT_D | 045:
-                _fpuRegs[FD].u64 = DtoL(_fpuRegs[FS].f64);
+                fpuWriteU64(FD, DtoL(fpuReadF64(FS)));
                 break;
 
             // C.cond.fmt (Floating-point Compare)
@@ -901,58 +903,58 @@ void CPU::tick()
 
             // 61: C.UN
             case FMT_S | 061:
-                _fpCompare = std::isnan(_fpuRegs[FS].f32) || std::isnan(_fpuRegs[FT].f32);
+                _fpCompare = (std::isnan(fpuReadF32(FS)) || std::isnan(fpuReadF32(FT)));
                 break;
             case FMT_D | 061:
-                _fpCompare = std::isnan(_fpuRegs[FS].f64) || std::isnan(_fpuRegs[FT].f64);
+                _fpCompare = (std::isnan(fpuReadF64(FS)) || std::isnan(fpuReadF64(FT)));
                 break;
 
             // 62: C.EQ
             case FMT_S | 062:
-                _fpCompare = _fpuRegs[FS].f32 == _fpuRegs[FT].f32;
+                _fpCompare = (fpuReadF32(FS) == fpuReadF32(FT));
                 break;
             case FMT_D | 062:
-                _fpCompare = _fpuRegs[FS].f64 == _fpuRegs[FT].f64;
+                _fpCompare = (fpuReadF64(FS) == fpuReadF64(FT));
                 break;
 
             // 63: C.UEQ
             case FMT_S | 063:
-                _fpCompare = std::isnan(_fpuRegs[FS].f32) || std::isnan(_fpuRegs[FT].f32) || (_fpuRegs[FS].f32 == _fpuRegs[FT].f32);
+                _fpCompare = (std::isnan(fpuReadF32(FS)) || std::isnan(fpuReadF32(FT)) || (fpuReadF32(FS) == fpuReadF32(FT)));
                 break;
             case FMT_D | 063:
-                _fpCompare = std::isnan(_fpuRegs[FS].f64) || std::isnan(_fpuRegs[FT].f64) || (_fpuRegs[FS].f64 == _fpuRegs[FT].f64);
+                _fpCompare = (std::isnan(fpuReadF64(FS)) || std::isnan(fpuReadF64(FT)) || (fpuReadF64(FS) == fpuReadF64(FT)));
                 break;
 
             // 64: C.OLT
             case FMT_S | 064:
-                _fpCompare = (_fpuRegs[FS].f32 < _fpuRegs[FT].f32);
+                _fpCompare = (fpuReadF32(FS) < fpuReadF32(FT));
                 break;
             case FMT_D | 064:
-                _fpCompare = (_fpuRegs[FS].f64 < _fpuRegs[FT].f64);
+                _fpCompare = (fpuReadF64(FS) < fpuReadF64(FT));
                 break;
 
             // 65: C.ULT
             case FMT_S | 065:
-                _fpCompare = std::isnan(_fpuRegs[FS].f32) || std::isnan(_fpuRegs[FT].f32) || (_fpuRegs[FS].f32 < _fpuRegs[FT].f32);
+                _fpCompare = (std::isnan(fpuReadF32(FS)) || std::isnan(fpuReadF32(FT)) || (fpuReadF32(FS) < fpuReadF32(FT)));
                 break;
             case FMT_D | 065:
-                _fpCompare = std::isnan(_fpuRegs[FS].f64) || std::isnan(_fpuRegs[FT].f64) || (_fpuRegs[FS].f64 < _fpuRegs[FT].f64);
+                _fpCompare = (std::isnan(fpuReadF64(FS)) || std::isnan(fpuReadF64(FT)) || (fpuReadF64(FS) < fpuReadF64(FT)));
                 break;
 
             // 66: C.OLE
             case FMT_S | 066:
-                _fpCompare = (_fpuRegs[FS].f32 <= _fpuRegs[FT].f32);
+                _fpCompare = (fpuReadF32(FS) <= fpuReadF32(FT));
                 break;
             case FMT_D | 066:
-                _fpCompare = (_fpuRegs[FS].f64 <= _fpuRegs[FT].f64);
+                _fpCompare = (fpuReadF64(FS) <= fpuReadF64(FT));
                 break;
 
             // 67: C.ULE
             case FMT_S | 067:
-                _fpCompare = std::isnan(_fpuRegs[FS].f32) || std::isnan(_fpuRegs[FT].f32) || (_fpuRegs[FS].f32 <= _fpuRegs[FT].f32);
+                _fpCompare = (std::isnan(fpuReadF32(FS)) || std::isnan(fpuReadF32(FT)) || (fpuReadF32(FS) <= fpuReadF32(FT)));
                 break;
             case FMT_D | 067:
-                _fpCompare = std::isnan(_fpuRegs[FS].f64) || std::isnan(_fpuRegs[FT].f64) || (_fpuRegs[FS].f64 <= _fpuRegs[FT].f64);
+                _fpCompare = (std::isnan(fpuReadF64(FS)) || std::isnan(fpuReadF64(FT)) || (fpuReadF64(FS) <= fpuReadF64(FT)));
                 break;
 
             // 70: C.SF
@@ -968,71 +970,71 @@ void CPU::tick()
             // 71: C.NGLE
             case FMT_S | 071:
                 // TODO: Signals
-                _fpCompare = std::isnan(_fpuRegs[FS].f32) || std::isnan(_fpuRegs[FT].f32);
+                _fpCompare = (std::isnan(fpuReadF32(FS)) || std::isnan(fpuReadF32(FT)));
                 break;
             case FMT_D | 071:
                 // TODO: Signals
-                _fpCompare = std::isnan(_fpuRegs[FS].f64) || std::isnan(_fpuRegs[FT].f64);
+                _fpCompare = (std::isnan(fpuReadF64(FS)) || std::isnan(fpuReadF64(FT)));
                 break;
 
             // 72: C.SEQ
             case FMT_S | 072:
                 // TODO: Signals
-                _fpCompare = _fpuRegs[FS].f32 == _fpuRegs[FT].f32;
+                _fpCompare = (fpuReadF32(FS) == fpuReadF32(FT));
                 break;
             case FMT_D | 072:
                 // TODO: Signals
-                _fpCompare = _fpuRegs[FS].f64 == _fpuRegs[FT].f64;
+                _fpCompare = (fpuReadF64(FS) == fpuReadF64(FT));
                 break;
 
             // 73: C.NGL
             case FMT_S | 073:
                 // TODO: Signals
-                _fpCompare = std::isnan(_fpuRegs[FS].f32) || std::isnan(_fpuRegs[FT].f32) || (_fpuRegs[FS].f32 == _fpuRegs[FT].f32);
+                _fpCompare = (std::isnan(fpuReadF32(FS)) || std::isnan(fpuReadF32(FT)) || (fpuReadF32(FS) == fpuReadF32(FT)));
                 break;
             case FMT_D | 073:
                 // TODO: Signals
-                _fpCompare = std::isnan(_fpuRegs[FS].f64) || std::isnan(_fpuRegs[FT].f64) || (_fpuRegs[FS].f64 == _fpuRegs[FT].f64);
+                _fpCompare = (std::isnan(fpuReadF64(FS)) || std::isnan(fpuReadF64(FT)) || (fpuReadF64(FS) == fpuReadF64(FT)));
                 break;
 
             // 74: C.LT
             case FMT_S | 074:
                 // TODO: Signals
-                _fpCompare = (_fpuRegs[FS].f32 < _fpuRegs[FT].f32);
+                _fpCompare = (fpuReadF32(FS) < fpuReadF32(FT));
                 break;
             case FMT_D | 074:
                 // TODO: Signals
-                _fpCompare = (_fpuRegs[FS].f64 < _fpuRegs[FT].f64);
+                _fpCompare = (fpuReadF64(FS) <= fpuReadF64(FT));
                 break;
 
             // 75: C.NGE
             case FMT_S | 075:
                 // TODO: Signals
-                _fpCompare = std::isnan(_fpuRegs[FS].f32) || std::isnan(_fpuRegs[FT].f32) || (_fpuRegs[FS].f32 < _fpuRegs[FT].f32);
+                _fpCompare = (std::isnan(fpuReadF32(FS)) || std::isnan(fpuReadF32(FT)) || (fpuReadF32(FS) < fpuReadF32(FT)));
                 break;
             case FMT_D | 075:
                 // TODO: Signals
-                _fpCompare = std::isnan(_fpuRegs[FS].f64) || std::isnan(_fpuRegs[FT].f64) || (_fpuRegs[FS].f64 < _fpuRegs[FT].f64);
+                _fpCompare = (std::isnan(fpuReadF64(FS)) || std::isnan(fpuReadF64(FT)) || (fpuReadF64(FS) < fpuReadF64(FT)));
                 break;
 
             // 76: C.LE
             case FMT_S | 076:
                 // TODO: Signals
-                _fpCompare = (_fpuRegs[FS].f32 <= _fpuRegs[FT].f32);
+                _fpCompare = (fpuReadF32(FS) <= fpuReadF32(FT));
                 break;
             case FMT_D | 076:
                 // TODO: Signals
-                _fpCompare = (_fpuRegs[FS].f64 <= _fpuRegs[FT].f64);
+                _fpCompare = (fpuReadF64(FS) <= fpuReadF64(FT));
                 break;
 
             // 77: C.NGT
             case FMT_S | 077:
                 // TODO: Signals
-                _fpCompare = std::isnan(_fpuRegs[FS].f32) || std::isnan(_fpuRegs[FT].f32) || (_fpuRegs[FS].f32 <= _fpuRegs[FT].f32);
+                _fpCompare = (std::isnan(fpuReadF32(FS)) || std::isnan(fpuReadF32(FT)) || (fpuReadF32(FS) <= fpuReadF32(FT)));
                 break;
             case FMT_D | 077:
                 // TODO: Signals
-                _fpCompare = std::isnan(_fpuRegs[FS].f64) || std::isnan(_fpuRegs[FT].f64) || (_fpuRegs[FS].f64 <= _fpuRegs[FT].f64);
+                _fpCompare = (std::isnan(fpuReadF64(FS)) || std::isnan(fpuReadF64(FT)) || (fpuReadF64(FS) <= fpuReadF64(FT)));
                 break;
 
             default:
@@ -1319,6 +1321,7 @@ std::uint32_t CPU::cop0Read(std::uint8_t reg)
         if (_ie) value |= 0x00000001;
         if (_exl) value |= 0x00000002;
         if (_erl) value |= 0x00000004;
+        if (_fr) value |= 0x04000000;
         value |= ((std::uint32_t)_im << 8);
         // COP0_NOT_IMPLEMENTED(false);
         break;
@@ -1411,9 +1414,12 @@ void CPU::cop0Write(std::uint8_t reg, std::uint32_t value)
         _ip &= ~INT_TIMER;
         break;
     case COP0_REG_SR:
+        std::printf("SR: 0x%08x\n", value);
+        //std::getchar();
         _ie  = !!(value & 0x00000001);
         _exl = !!(value & 0x00000002);
         _erl = !!(value & 0x00000004);
+        _fr  = !!(value & 0x04000000);
         _im  = (value >> 8) & 0xff;
         break;
     case COP0_REG_CAUSE:
@@ -1456,6 +1462,73 @@ void CPU::cop0Write(std::uint8_t reg, std::uint32_t value)
         _errorEpc = value;
         break;
     }
+}
+
+std::uint32_t CPU::fpuReadU32(std::uint8_t reg)
+{
+    reg = reg & (_fr ? 0x1f : 0x1e);
+    return _fpuRegs[reg].u32;
+}
+
+std::uint64_t CPU::fpuReadU64(std::uint8_t reg)
+{
+    std::uint64_t tmp;
+
+    if (_fr)
+    {
+        tmp = _fpuRegs[reg].u64;
+    }
+    else
+    {
+        tmp = _fpuRegs[(reg & 0x1e) + 0].u32;
+        tmp |= std::uint64_t(_fpuRegs[(reg & 0x1e) + 1].u32) << 32;
+    }
+    return tmp;
+}
+
+float CPU::fpuReadF32(std::uint8_t reg)
+{
+    std::uint32_t tmp;
+
+    tmp = fpuReadU32(reg);
+    return *(float*)(&tmp);
+}
+
+double CPU::fpuReadF64(std::uint8_t reg)
+{
+    std::uint64_t tmp;
+
+    tmp = fpuReadU64(reg);
+    return *(double*)(&tmp);
+}
+
+void CPU::fpuWriteU32(std::uint8_t reg, std::uint32_t value)
+{
+    reg = reg & (_fr ? 0x1f : 0x1e);
+
+    _fpuRegs[reg].u32 = value;
+}
+void CPU::fpuWriteU64(std::uint8_t reg, std::uint64_t value)
+{
+    if (_fr)
+    {
+        _fpuRegs[reg].u64 = value;
+    }
+    else
+    {
+        _fpuRegs[(reg & 0x1e) + 0].u32 = ((value >> 0) & 0xffffffff);
+        _fpuRegs[(reg & 0x1e) + 1].u32 = ((value >> 8) & 0xffffffff);
+    }
+}
+
+void CPU::fpuWriteF32(std::uint8_t reg, float value)
+{
+    fpuWriteU32(reg, *(std::uint32_t*)(&value));
+}
+
+void CPU::fpuWriteF64(std::uint8_t reg, double value)
+{
+    fpuWriteU64(reg, *(std::uint64_t*)(&value));
 }
 
 std::uint32_t CPU::fcrRead(std::uint8_t reg)
