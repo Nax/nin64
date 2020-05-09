@@ -26,6 +26,7 @@ public:
     std::uint32_t read(std::uint32_t reg);
     void          write(std::uint32_t reg, std::uint32_t value);
 
+    bool checkInterrupt(std::uint8_t intr) const;
     void setInterrupt(std::uint8_t intr);
     void clearInterrupt(std::uint8_t intr);
 

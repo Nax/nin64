@@ -5,16 +5,18 @@
 #include <libnin64/MIPSInterface.h>
 #include <libnin64/Memory.h>
 #include <libnin64/PeripheralInterface.h>
+#include <libnin64/SerialInterface.h>
 #include <libnin64/Util.h>
 
 using namespace libnin64;
 
 // https://raw.githubusercontent.com/mikeryan/n64dev/master/docs/n64ops/n64ops%23h.txt
-Bus::Bus(Memory& memory, Cart& cart, MIPSInterface& mi, PeripheralInterface& pi)
+Bus::Bus(Memory& memory, Cart& cart, MIPSInterface& mi, PeripheralInterface& pi, SerialInterface& si)
 : _memory{memory}
 , _cart{cart}
 , _mi{mi}
 , _pi{pi}
+, _si{si}
 {
 }
 
@@ -38,6 +40,8 @@ template <typename T> T Bus::read(std::uint32_t addr)
         value = T(_mi.read(addr));
     else if (addr >= 0x04600000 && addr <= 0x046fffff) // Peripheral Interface (PI) Registers
         value = T(_pi.read(addr));
+    else if (addr >= 0x04800000 && addr <= 0x048fffff) // Serial Interface (SI) Registers
+        value = T(_si.read(addr));
     else if (addr >= 0x10000000 && addr <= 0x1fbfffff) // Cart Domain 1 Address 2
     {
         _cart.read((std::uint8_t*)&value, addr - 0x10000000, sizeof(T));
@@ -68,6 +72,8 @@ template <typename T> void Bus::write(std::uint32_t addr, T value)
         _mi.write(addr, (std::uint32_t)value);
     else if (addr >= 0x04600000 && addr <= 0x046fffff) //  Peripheral Interface (PI) Registers
         _pi.write(addr, (std::uint32_t)value);
+    else if (addr >= 0x04800000 && addr <= 0x048fffff) //  Serial Interface (SI) Registers
+        _si.write(addr, (std::uint32_t)value);
     else
     {
         std::printf("WARN: Write: Accessing not mapped memory zone: 0x%08x.\n", addr);

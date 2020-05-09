@@ -8,6 +8,7 @@
 #include <libnin64/Memory.h>
 #include <libnin64/NonCopyable.h>
 #include <libnin64/PeripheralInterface.h>
+#include <libnin64/SerialInterface.h>
 
 namespace libnin64
 {
@@ -24,6 +25,7 @@ public:
     Memory              memory;
     MIPSInterface       mi;
     PeripheralInterface pi;
+    SerialInterface     si;
     Bus                 bus;
     CPU                 cpu;
 };

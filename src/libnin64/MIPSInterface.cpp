@@ -80,6 +80,11 @@ void MIPSInterface::write(std::uint32_t reg, std::uint32_t value)
     }
 }
 
+bool MIPSInterface::checkInterrupt(std::uint8_t intr) const
+{
+    return !!(_interrupts & intr);
+}
+
 void MIPSInterface::setInterrupt(std::uint8_t intr)
 {
     _interrupts |= intr;

@@ -224,7 +224,7 @@ void CPU::tick(std::size_t count)
     {
         tick();
     }
-    std::printf("PC: %016llx\n", _pc);
+    //std::printf("PC: %016llx\n", _pc);
 }
 
 void CPU::tick()
@@ -1434,19 +1434,16 @@ void CPU::cop0Write(std::uint8_t reg, std::uint32_t value)
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_COUNT:
-        std::printf("COUNT: %u\n", value);
         _count = value;
         break;
     case COP0_REG_ENTRYHI:
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_COMPARE:
-        std::printf("COMPARE: %u\n", value);
         _compare = value;
         _ip &= ~INT_TIMER;
         break;
     case COP0_REG_SR:
-        std::printf("SR: 0x%08x\n", value);
         //std::getchar();
         _ie  = !!(value & 0x00000001);
         _exl = !!(value & 0x00000002);
