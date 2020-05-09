@@ -9,6 +9,7 @@
 #include <libnin64/NonCopyable.h>
 #include <libnin64/PeripheralInterface.h>
 #include <libnin64/SerialInterface.h>
+#include <libnin64/VideoInterface.h>
 
 namespace libnin64
 {
@@ -26,6 +27,7 @@ public:
     MIPSInterface       mi;
     PeripheralInterface pi;
     SerialInterface     si;
+    VideoInterface      vi;
     Bus                 bus;
     CPU                 cpu;
 };

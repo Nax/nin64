@@ -1,15 +1,15 @@
-#include <nin64/nin64.h>
 #include <libnin64/State.h>
+#include <nin64/nin64.h>
 
 using namespace libnin64;
 
 NIN64_API Nin64Err nin64CreateState(Nin64State** dst, const char* romPath)
 {
     Nin64Err err;
-    State* state;
+    State*   state;
 
     state = new State;
-    err = state->loadRom(romPath);
+    err   = state->loadRom(romPath);
     if (err)
     {
         delete state;
@@ -30,5 +30,12 @@ NIN64_API Nin64Err nin64DestroyState(Nin64State* state)
 NIN64_API Nin64Err nin64RunCycles(Nin64State* state, size_t count)
 {
     state->cpu.tick(count);
+    return NIN64_OK;
+}
+
+NIN64_API Nin64Err nin64RunFrame(Nin64State* state)
+{
+    state->cpu.tick(93750000 / 60);
+    state->vi.setVBlank();
     return NIN64_OK;
 }

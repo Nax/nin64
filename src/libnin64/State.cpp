@@ -8,7 +8,8 @@ State::State()
 , mi{}
 , pi{mi, memory, cart}
 , si{mi}
-, bus{memory, cart, mi, pi, si}
+, vi{mi}
+, bus{memory, cart, mi, pi, si, vi}
 , cpu{bus, mi}
 {
 }

@@ -39,8 +39,9 @@ int main(int argc, char** argv)
         // printf("=================\n");
         // printf("CYCLES: %016llu\n", count);
         // printf("=================\n");
-        nin64RunCycles(state, 1024 * 127);
-        count += 1024 * 127;
+        //nin64RunCycles(state, 1024 * 127);
+        //count += 1024 * 127;
+        nin64RunFrame(state);
     }
     nin64DestroyState(state);
 

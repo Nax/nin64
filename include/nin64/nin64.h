@@ -16,5 +16,6 @@ typedef enum
 NIN64_API Nin64Err nin64CreateState(Nin64State** dst, const char* romPath);
 NIN64_API Nin64Err nin64DestroyState(Nin64State* state);
 NIN64_API Nin64Err nin64RunCycles(Nin64State* state, size_t count);
+NIN64_API Nin64Err nin64RunFrame(Nin64State* state);
 
 #endif
