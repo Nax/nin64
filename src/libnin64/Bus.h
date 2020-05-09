@@ -13,11 +13,12 @@ class MIPSInterface;
 class PeripheralInterface;
 class SerialInterface;
 class VideoInterface;
+class RSP;
 
 class Bus : private NonCopyable
 {
 public:
-    Bus(Memory& memory, Cart& cart, MIPSInterface& mi, PeripheralInterface& pi, SerialInterface& si, VideoInterface& vi);
+    Bus(Memory& memory, Cart& cart, MIPSInterface& mi, PeripheralInterface& pi, SerialInterface& si, VideoInterface& vi, RSP& rsp);
 
     template <typename T> T    read(std::uint32_t addr);
     template <typename T> void write(std::uint32_t addr, T value);
@@ -39,6 +40,7 @@ private:
     PeripheralInterface& _pi;
     SerialInterface&     _si;
     VideoInterface&      _vi;
+    RSP&                 _rsp;
 };
 
 } // namespace libnin64
