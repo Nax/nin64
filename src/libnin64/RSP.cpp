@@ -33,6 +33,7 @@
     }
 
 #define RS          ((std::uint8_t)((op >> 21) & 0x1f))
+#define BASE        RS
 #define RT          ((std::uint8_t)((op >> 16) & 0x1f))
 #define RD          ((std::uint8_t)((op >> 11) & 0x1f))
 #define SA          ((std::uint8_t)((op >> 6) & 0x1f))
@@ -85,61 +86,58 @@ void RSP::tick()
         switch (op & 0x3f)
         {
         case 000: // SLL (Shift Left Logical)
-            NOT_IMPLEMENTED();
+            _regs[RD].u32 = _regs[RT].u32 << SA;
             break;
         case 002: // SRL (Shift Right Logical)
-            NOT_IMPLEMENTED();
+            _regs[RD].u32 = _regs[RT].u32 >> SA;
             break;
         case 003: // SRA (Shift Right Arithmetic)
-            NOT_IMPLEMENTED();
+            _regs[RD].i32 = _regs[RT].i32 >> SA;
             break;
         case 004: // SLLV (Shift Left Logical Variable)
-            NOT_IMPLEMENTED();
+            _regs[RD].u32 = _regs[RT].u32 << (_regs[RS].u16 & 0x1f);
             break;
         case 006: // SRLV (Shift Right Logical Variable)
-            NOT_IMPLEMENTED();
+            _regs[RD].u32 = _regs[RT].u32 >> (_regs[RS].u16 & 0x1f);
             break;
         case 007: // SRAV (Shift Right Arithmetic Variable)
-            NOT_IMPLEMENTED();
+            _regs[RD].i32 = _regs[RT].i32 >> (_regs[RS].u16 & 0x1f);
             break;
         case 010: // JR (Jump Register)
-            NOT_IMPLEMENTED();
+            _pcNext = _regs[RS].u16 & 0xfff;
             break;
         case 011: // JALR (Jump And Link Register)
-            NOT_IMPLEMENTED();
+            _pcNext       = _regs[RS].u16 & 0xfff;
+            _regs[RD].u32 = (_pc + 4) & 0xfff;
             break;
-        case 015: // BREAK (Breakpoint)
+        case 015: // BREAK (Halt the RSP)
             NOT_IMPLEMENTED();
             break;
         case 040: // ADD (Add)
-            NOT_IMPLEMENTED();
-            break;
         case 041: // ADDU (Add Unsigned)
-            NOT_IMPLEMENTED();
+            _regs[RD].i32 = _regs[RS].i32 + _regs[RT].i32;
             break;
         case 042: // SUB (Subtract)
-            NOT_IMPLEMENTED();
-            break;
         case 043: // SUBU (Subtract Unsigned)
-            NOT_IMPLEMENTED();
+            _regs[RD].i32 = _regs[RS].i32 - _regs[RT].i32;
             break;
         case 044: // AND
-            NOT_IMPLEMENTED();
+            _regs[RD].u32 = _regs[RS].u32 & _regs[RT].u32;
             break;
         case 045: // OR
-            NOT_IMPLEMENTED();
+            _regs[RD].u32 = _regs[RS].u32 | _regs[RT].u32;
             break;
         case 046: // XOR
-            NOT_IMPLEMENTED();
+            _regs[RD].u32 = _regs[RS].u32 ^ _regs[RT].u32;
             break;
         case 047: // NOR
-            NOT_IMPLEMENTED();
+            _regs[RD].u32 = ~(_regs[RS].u32 | _regs[RT].u32);
             break;
         case 052: // SLT (Set On Less Than)
-            NOT_IMPLEMENTED();
+            _regs[RD].u32 = (_regs[RS].i32 < _regs[RT].i32) ? 1 : 0;
             break;
         case 053: // SLTU (Set On Less Than Unsigned)
-            NOT_IMPLEMENTED();
+            _regs[RD].u32 = (_regs[RS].u32 < _regs[RT].u32) ? 1 : 0;
             break;
         default:
             NOT_IMPLEMENTED();
@@ -150,16 +148,30 @@ void RSP::tick()
         switch (RT)
         {
         case 000: // BLTZ
-            NOT_IMPLEMENTED();
+            if (_regs[RS].i32 < 0)
+            {
+                _pcNext = (_pc + (SIMM << 2)) & 0xfff;
+            }
             break;
         case 001: // BGEZ
-            NOT_IMPLEMENTED();
+            if (_regs[RS].i32 >= 0)
+            {
+                _pcNext = (_pc + (SIMM << 2)) & 0xfff;
+            }
             break;
-        case 020: // BLTZAL (Branch On Less Than Zero And Link Likely)
-            NOT_IMPLEMENTED();
+        case 020: // BLTZAL (Branch On Less Than Zero And Link)
+            if (_regs[RS].i32 < 0)
+            {
+                _pcNext = (_pc + (SIMM << 2)) & 0xfff;
+            }
+            _regs[31].u32 = (_pc + 4) & 0xfff;
             break;
-        case 021: // BGEZAL (Branch On Greater Than Or Equal To Zero And Link Likely)
-            NOT_IMPLEMENTED();
+        case 021: // BGEZAL (Branch On Greater Than Or Equal To Zero And Link)
+            if (_regs[RS].i32 >= 0)
+            {
+                _pcNext = (_pc + (SIMM << 2)) & 0xfff;
+            }
+            _regs[31].u32 = (_pc + 4) & 0xfff;
             break;
         default:
             NOT_IMPLEMENTED();
@@ -167,90 +179,100 @@ void RSP::tick()
         }
         break;
     case 002: // J (Jump)
-        NOT_IMPLEMENTED();
+        _pcNext = ((JUMP_TARGET << 2) & 0xfff);
         break;
     case 003: // JAL (Jump And Link)
-        NOT_IMPLEMENTED();
+        _regs[31].u32 = ((_pc + 4) & 0xfff);
+        _pcNext       = ((JUMP_TARGET << 2) & 0xfff);
         break;
     case 004: // BEQ
-        NOT_IMPLEMENTED();
+        if (_regs[RS].u32 == _regs[RT].u32)
+        {
+            _pcNext = (_pc + (SIMM << 2)) & 0xfff;
+        }
         break;
     case 005: // BNE
-        NOT_IMPLEMENTED();
+        if (_regs[RS].u32 != _regs[RT].u32)
+        {
+            _pcNext = (_pc + (SIMM << 2)) & 0xfff;
+        }
         break;
     case 006: // BLEZ
-        NOT_IMPLEMENTED();
+        if (_regs[RS].i32 <= 0)
+        {
+            _pcNext = (_pc + (SIMM << 2)) & 0xfff;
+        }
         break;
     case 007: // BGTZ
-        NOT_IMPLEMENTED();
+        if (_regs[RS].i32 > 0)
+        {
+            _pcNext = (_pc + (SIMM << 2)) & 0xfff;
+        }
         break;
     case 010: // ADDI (Add Immediate)
-        NOT_IMPLEMENTED();
-        break;
     case 011: // ADDIU (Add Immediate Unsigned)
-        NOT_IMPLEMENTED();
+        _regs[RT].i32 = _regs[RS].i32 + SIMM;
         break;
     case 012: // SLTI (Set On Less Than Immediate)
-        NOT_IMPLEMENTED();
+        _regs[RT].u32 = (_regs[RS].i32 < (std::int32_t)SIMM) ? 1 : 0;
         break;
     case 013: // SLTIU (Set On Less Than Immediate Unsigned)
-        NOT_IMPLEMENTED();
+        _regs[RT].u32 = (_regs[RS].u32 < IMM) ? 1 : 0;
         break;
     case 014: // ANDI (And Immediate)
-        NOT_IMPLEMENTED();
+        _regs[RT].u32 = _regs[RS].u32 & IMM;
         break;
     case 015: // ORI (Or Immediate)
-        NOT_IMPLEMENTED();
+        _regs[RT].u32 = _regs[RS].u32 | IMM;
         break;
     case 016: // XORI (Exclusive Or Immediate)
-        NOT_IMPLEMENTED();
+        _regs[RT].u32 = _regs[RS].u32 ^ IMM;
         break;
     case 017: // LUI (Load Upper Immediate)
-        NOT_IMPLEMENTED();
+        _regs[RT].u32 = ((std::uint32_t)IMM) << 16;
         break;
     case 020: // COP0 (Coprocessor 0)
-        NOT_IMPLEMENTED();
-        break;
-    case 021: // COP1 (Coprocessor 1)
-        NOT_IMPLEMENTED();
+        switch (RS)
+        {
+        case 000: // MFC0
+            _regs[RT].u32 = cop0Read(RD);
+            break;
+        case 004: // MTC0
+            cop0Write(RD, _regs[RT].u32);
+            break;
+        default:
+            NOT_IMPLEMENTED();
+            break;
+        }
         break;
     case 022: // COP2 (Coprocessor 2)
         NOT_IMPLEMENTED();
         break;
     case 040: // LB (Load Byte)
-        NOT_IMPLEMENTED();
+        _regs[RT].i32 = (std::int8_t)dRead8(_regs[BASE].u16 + SIMM);
         break;
     case 041: // LH (Load Halfword)
-        NOT_IMPLEMENTED();
+        _regs[RT].i32 = (std::int16_t)dRead16(_regs[BASE].u16 + SIMM);
         break;
     case 043: // LW (Load Word)
-        NOT_IMPLEMENTED();
+        _regs[RT].u32 = dRead32(_regs[BASE].u16 + SIMM);
         break;
     case 044: // LBU (Load Byte Unsigned)
-        NOT_IMPLEMENTED();
+        _regs[RT].u32 = dRead8(_regs[BASE].u16 + SIMM);
         break;
     case 045: // LHU (Load Halfword Unsigned)
-        NOT_IMPLEMENTED();
+        _regs[RT].u32 = dRead16(_regs[BASE].u16 + SIMM);
         break;
     case 050: // SB (Store Byte)
-        NOT_IMPLEMENTED();
+        dWrite8(_regs[BASE].u16 + SIMM, _regs[RT].u8);
         break;
     case 051: // SH (Store Halfword)
-        NOT_IMPLEMENTED();
+        dWrite16(_regs[BASE].u16 + SIMM, _regs[RT].u16);
         break;
     case 053: // SW (Store Word)
-        NOT_IMPLEMENTED();
-        break;
-    case 057: // CACHE
-        NOT_IMPLEMENTED();
-        break;
-    case 061: // LWC1 (Load Word to FPU)
-        NOT_IMPLEMENTED();
+        dWrite32(_regs[BASE].u16 + SIMM, _regs[RT].u32);
         break;
     case 062: // LWC2
-        NOT_IMPLEMENTED();
-        break;
-    case 071: // SWC1 (Store Word From FPU)
         NOT_IMPLEMENTED();
         break;
     case 072: // SWC2
@@ -288,12 +310,8 @@ std::uint32_t RSP::read(std::uint32_t reg)
         if (_halt) value |= 0x00000001;
         break;
     case SP_DMA_FULL_REG:
-        std::puts("READ::SP_DMA_FULL_REG NOT IMPLEMENTED");
-        exit(42);
         break;
     case SP_DMA_BUSY_REG:
-        std::puts("READ::SP_DMA_BUSY_REG NOT IMPLEMENTED");
-        exit(42);
         break;
     case SP_SEMAPHORE_REG:
         if (_semaphore) value |= 0x01;
@@ -406,4 +424,118 @@ template <typename T> void RSP::dWrite(std::uint16_t addr, T value)
     addr &= 0xfff;
 
     *(T*)(_memory.spDmem + addr) = swap(value);
+}
+
+std::uint32_t RSP::cop0Read(std::uint8_t reg)
+{
+    std::uint32_t value{};
+
+    switch (reg)
+    {
+    case 0:
+        value = read(SP_MEM_ADDR_REG);
+        break;
+    case 1:
+        value = read(SP_DRAM_ADDR_REG);
+        break;
+    case 2:
+        value = read(SP_RD_LEN_REG);
+        break;
+    case 3:
+        value = read(SP_WR_LEN_REG);
+        break;
+    case 4:
+        value = read(SP_STATUS_REG);
+        break;
+    case 5:
+        value = read(SP_DMA_FULL_REG);
+        break;
+    case 6:
+        value = read(SP_DMA_BUSY_REG);
+        break;
+    case 7:
+        value = read(SP_SEMAPHORE_REG);
+        break;
+    case 8:
+        // TODO: RDP
+        break;
+    case 9:
+        // TODO: RDP
+        break;
+    case 10:
+        // TODO: RDP
+        break;
+    case 11:
+        // TODO: RDP
+        break;
+    case 12:
+        // TODO: RDP
+        break;
+    case 13:
+        // TODO: RDP
+        break;
+    case 14:
+        // TODO: RDP
+        break;
+    case 15:
+        // TODO: RDP
+        break;
+    }
+
+    return value;
+}
+
+void RSP::cop0Write(std::uint8_t reg, std::uint32_t value)
+{
+    switch (reg)
+    {
+    case 0:
+        write(SP_MEM_ADDR_REG, value);
+        break;
+    case 1:
+        write(SP_DRAM_ADDR_REG, value);
+        break;
+    case 2:
+        write(SP_RD_LEN_REG, value);
+        break;
+    case 3:
+        write(SP_WR_LEN_REG, value);
+        break;
+    case 4:
+        write(SP_STATUS_REG, value);
+        break;
+    case 5:
+        write(SP_DMA_FULL_REG, value);
+        break;
+    case 6:
+        write(SP_DMA_BUSY_REG, value);
+        break;
+    case 7:
+        write(SP_SEMAPHORE_REG, value);
+        break;
+    case 8:
+        // TODO: RDP
+        break;
+    case 9:
+        // TODO: RDP
+        break;
+    case 10:
+        // TODO: RDP
+        break;
+    case 11:
+        // TODO: RDP
+        break;
+    case 12:
+        // TODO: RDP
+        break;
+    case 13:
+        // TODO: RDP
+        break;
+    case 14:
+        // TODO: RDP
+        break;
+    case 15:
+        // TODO: RDP
+        break;
+    }
 }

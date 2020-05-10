@@ -46,6 +46,9 @@ private:
     void dWrite16(std::uint16_t addr, std::uint16_t value) { dWrite<uint16_t>(addr, value); }
     void dWrite32(std::uint16_t addr, std::uint32_t value) { dWrite<uint32_t>(addr, value); }
 
+    std::uint32_t cop0Read(std::uint8_t reg);
+    void          cop0Write(std::uint8_t reg, std::uint32_t value);
+
     Memory&        _memory;
     MIPSInterface& _mi;
 
