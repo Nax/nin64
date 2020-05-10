@@ -76,7 +76,7 @@ template <typename T> void Bus::write(std::uint32_t addr, T value)
         *(T*)(_memory.spDmem + (addr & 0xfff)) = swap(value);
     else if (addr < 0x04002000)
         *(T*)(_memory.spImem + (addr & 0xfff)) = swap(value);
-    else if (addr >= 0x04040000 && addr <= 0x0404ffff)
+    else if (addr >= 0x04040000 && addr <= 0x0408ffff)
         _rsp.write(addr, (std::uint32_t)value);
     else if (addr >= 0x04300000 && addr <= 0x043fffff) //  MIPS Interface (MI) Registers
         _mi.write(addr, (std::uint32_t)value);

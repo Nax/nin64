@@ -35,7 +35,11 @@ NIN64_API Nin64Err nin64RunCycles(Nin64State* state, size_t count)
 
 NIN64_API Nin64Err nin64RunFrame(Nin64State* state)
 {
-    state->cpu.tick(93750000 / 60);
+    for (int i = 0; i < (93750000 / 60 / 32); ++i)
+    {
+        state->cpu.tick(32);
+        state->rsp.tick(24);
+    }
     state->vi.setVBlank();
     return NIN64_OK;
 }

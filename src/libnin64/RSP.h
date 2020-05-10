@@ -16,12 +16,35 @@ public:
     RSP(Memory& memory, MIPSInterface& mi);
     ~RSP();
 
+    void tick(std::size_t count);
+    void tick();
+
     std::uint32_t read(std::uint32_t reg);
     void          write(std::uint32_t reg, std::uint32_t value);
 
 private:
+    union Reg {
+        std::uint8_t  u8;
+        std::int8_t   i8;
+        std::uint16_t u16;
+        std::int16_t  i16;
+        std::uint32_t u32;
+        std::int32_t  i32;
+    };
+
     void dmaRead(std::uint16_t length, std::uint16_t count, std::uint16_t skip);
     void dmaWrite(std::uint16_t length, std::uint16_t count, std::uint16_t skip);
+
+    template <typename T> T    dRead(std::uint16_t addr);
+    template <typename T> void dWrite(std::uint16_t addr, T value);
+
+    std::uint8_t  dRead8(std::uint16_t addr) { return dRead<uint8_t>(addr); }
+    std::uint16_t dRead16(std::uint16_t addr) { return dRead<uint16_t>(addr); }
+    std::uint32_t dRead32(std::uint16_t addr) { return dRead<uint32_t>(addr); }
+
+    void dWrite8(std::uint16_t addr, std::uint8_t value) { dWrite<uint8_t>(addr, value); }
+    void dWrite16(std::uint16_t addr, std::uint16_t value) { dWrite<uint16_t>(addr, value); }
+    void dWrite32(std::uint16_t addr, std::uint32_t value) { dWrite<uint32_t>(addr, value); }
 
     Memory&        _memory;
     MIPSInterface& _mi;
@@ -30,6 +53,7 @@ private:
     bool          _semaphore : 1;
     std::uint16_t _spAddr;
     std::uint32_t _dramAddr;
+    Reg           _regs[32];
     std::uint16_t _pc;
     std::uint16_t _pcNext;
 };
