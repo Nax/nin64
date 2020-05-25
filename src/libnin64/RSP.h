@@ -47,10 +47,12 @@ private:
     std::uint8_t  dRead8(std::uint16_t addr) { return dRead<uint8_t>(addr); }
     std::uint16_t dRead16(std::uint16_t addr) { return dRead<uint16_t>(addr); }
     std::uint32_t dRead32(std::uint16_t addr) { return dRead<uint32_t>(addr); }
+    std::uint32_t dRead64(std::uint16_t addr) { return dRead<uint64_t>(addr); }
 
     void dWrite8(std::uint16_t addr, std::uint8_t value) { dWrite<uint8_t>(addr, value); }
     void dWrite16(std::uint16_t addr, std::uint16_t value) { dWrite<uint16_t>(addr, value); }
     void dWrite32(std::uint16_t addr, std::uint32_t value) { dWrite<uint32_t>(addr, value); }
+    void dWrite64(std::uint16_t addr, std::uint64_t value) { dWrite<uint64_t>(addr, value); }
 
     std::uint32_t cop0Read(std::uint8_t reg);
     void          cop0Write(std::uint8_t reg, std::uint32_t value);

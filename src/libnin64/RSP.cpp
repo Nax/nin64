@@ -17,33 +17,36 @@
 #define SP_PC_REG        0x04080000
 #define SP_IBIST_REG     0x04080004
 
-#define NOT_IMPLEMENTED()                                                                            \
-    {                                                                                                \
-        std::printf("%s:%d PC: 0x%04x Not implemented: OP:%02o RS:%02o RT:%02o RD:%02o %02o %02o\n", \
-                    __FILE__,                                                                        \
-                    __LINE__,                                                                        \
-                    _pc,                                                                             \
-                    (op >> 26),                                                                      \
-                    ((op >> 21) & 0x1f),                                                             \
-                    ((op >> 16) & 0x1f),                                                             \
-                    ((op >> 11) & 0x1f),                                                             \
-                    ((op >> 06) & 0x1f),                                                             \
-                    ((op >> 00) & 0x3f));                                                            \
-        std::exit(1);                                                                                \
-    }
-
 #define RS          ((std::uint8_t)((op >> 21) & 0x1f))
 #define BASE        RS
+#define E           ((std::uint8_t)((op >> 21) & 0xf))
 #define RT          ((std::uint8_t)((op >> 16) & 0x1f))
 #define VT          RT
 #define RD          ((std::uint8_t)((op >> 11) & 0x1f))
 #define OPCODE      RD
 #define SA          ((std::uint8_t)((op >> 6) & 0x1f))
-#define ELEMENT     SA
+#define ELEMENT     ((std::uint8_t)((op >> 6) & 0xf))
 #define IMM         ((std::uint16_t)op)
 #define SIMM        ((std::int16_t)op)
 #define OFFSET      ((std::uint16_t)(op & ((1 << 7) - 1)))
+#define FUNC        ((std::uint16_t)(op & ((1 << 6) - 1)))
 #define JUMP_TARGET ((std::uint32_t)op & 0x3ffffff)
+
+#define NOT_IMPLEMENTED()                                                                                      \
+    {                                                                                                          \
+        std::printf("%s:%d PC: 0x%04x Not implemented: OP:%02o RS:%02o RT:%02o RD:%02o %02o %02o FUNC:%02x\n", \
+                    __FILE__,                                                                                  \
+                    __LINE__,                                                                                  \
+                    _pc,                                                                                       \
+                    (op >> 26),                                                                                \
+                    ((op >> 21) & 0x1f),                                                                       \
+                    ((op >> 16) & 0x1f),                                                                       \
+                    ((op >> 11) & 0x1f),                                                                       \
+                    ((op >> 06) & 0x1f),                                                                       \
+                    ((op >> 00) & 0x3f),                                                                       \
+                    FUNC);                                                                                     \
+        std::exit(1);                                                                                          \
+    }
 
 using namespace libnin64;
 
@@ -76,6 +79,9 @@ void RSP::tick(std::size_t count)
 
 void RSP::tick()
 {
+    alignas(16) char vtmp[16];
+
+    std::uint64_t tmp64;
     std::uint32_t op;
     std::uint32_t tmp32;
     std::uint16_t tmp16;
@@ -254,7 +260,244 @@ void RSP::tick()
         }
         break;
     case 022: // COP2 (Coprocessor 2)
-        NOT_IMPLEMENTED();
+        switch (RS)
+        {
+        case 000: // MFC2
+            NOT_IMPLEMENTED();
+            break;
+        case 002: // CFC2
+            NOT_IMPLEMENTED();
+            break;
+        case 004: // MTC2
+            _mm_store_si128((__m128i*)vtmp, _vregs[RD].i);
+            *(uint16_t*)(vtmp + (ELEMENT & 0xe)) = _regs[RT].u16;
+            _vregs[RD].i                         = _mm_load_si128((__m128i*)vtmp);
+            break;
+        case 006: // CTC2
+            NOT_IMPLEMENTED();
+            break;
+        case 010: // BC2
+            NOT_IMPLEMENTED();
+            break;
+        case 020:
+        case 021:
+        case 022:
+        case 023:
+        case 024:
+        case 025:
+        case 026:
+        case 027:
+        case 030:
+        case 031:
+        case 032:
+        case 033:
+        case 034:
+        case 035:
+        case 036:
+        case 037: // CO
+            switch (FUNC)
+            {
+            case 0b000000: // VMULF (Vector Multiply of Signed Fractions)
+                NOT_IMPLEMENTED();
+                break;
+            case 0b000001:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b000010:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b000011:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b000100:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b000101:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b000110:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b000111:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b001000:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b001001:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b001010:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b001011:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b001100:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b001101:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b001110:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b001111:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b010000:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b010001:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b010010:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b010011:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b010100:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b010101:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b010110:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b010111:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b011000:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b011001:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b011010:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b011011:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b011100:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b011101:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b011110:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b011111:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b100000:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b100001:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b100010:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b100011:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b100100:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b100101:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b100110:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b100111:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b101000:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b101001:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b101010:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b101011:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b101100:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b101101:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b101110:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b101111:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b110000:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b110001:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b110010:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b110011:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b110100:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b110101:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b110110:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b110111:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b111000:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b111001:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b111010:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b111011:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b111100:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b111101:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b111110:
+                NOT_IMPLEMENTED();
+                break;
+            case 0b111111:
+                NOT_IMPLEMENTED();
+                break;
+            default:
+                NOT_IMPLEMENTED();
+                break;
+            }
+            break;
+        default:
+            NOT_IMPLEMENTED();
+            break;
+        }
         break;
     case 040: // LB (Load Byte)
         _regs[RT].i32 = (std::int8_t)dRead8(_regs[BASE].u16 + SIMM);
@@ -281,6 +524,7 @@ void RSP::tick()
         dWrite32(_regs[BASE].u16 + SIMM, _regs[RT].u32);
         break;
     case 062: // LWC2
+        _mm_store_si128((__m128i*)vtmp, _vregs[VT].i);
         switch (OPCODE)
         {
         case 0b00000: // LBV
@@ -292,11 +536,15 @@ void RSP::tick()
         case 0b00010: // LLV
             NOT_IMPLEMENTED();
             break;
-        case 0b00011: // LDV
-            NOT_IMPLEMENTED();
+        case 0b00011: // LDV (Load Double into Vector Register)
+            *(uint64_t*)(vtmp + (8 - (ELEMENT & 8))) = dRead64((_regs[BASE].u16 + (OFFSET << 3)) & 0xfff);
             break;
-        case 0b00100: // LQV
-            NOT_IMPLEMENTED();
+        case 0b00100: // LQV (Load Quad into Vector Register)
+            addr = (_regs[BASE].u16 + (OFFSET << 4)) & 0xfff;
+            for (int i = 0; i < 16 - (addr & 0xf); ++i)
+            {
+                vtmp[15 - i] = dRead8((addr & 0xff0) + i);
+            }
             break;
         case 0b00101: // LRV
             NOT_IMPLEMENTED();
@@ -320,9 +568,49 @@ void RSP::tick()
             NOT_IMPLEMENTED();
             break;
         }
+        _vregs[VT].i = _mm_load_si128((__m128i*)vtmp);
         break;
     case 072: // SWC2
-        NOT_IMPLEMENTED();
+        _mm_store_si128((__m128i*)vtmp, _vregs[VT].i);
+        switch (OPCODE)
+        {
+        case 0b00000: // SBV
+            NOT_IMPLEMENTED();
+            break;
+        case 0b00001: // SSV
+            NOT_IMPLEMENTED();
+            break;
+        case 0b00010: // SLV
+            NOT_IMPLEMENTED();
+            break;
+        case 0b00011: // SDV (Store Double into Vector Register)
+            dWrite64((_regs[BASE].u16 + (OFFSET << 3)) & 0xfff, *(uint64_t*)(vtmp + (8 - (ELEMENT & 8))));
+            break;
+        case 0b00100: // SQV
+            NOT_IMPLEMENTED();
+            break;
+        case 0b00101: // SRV
+            NOT_IMPLEMENTED();
+            break;
+        case 0b00110: // SPV
+            NOT_IMPLEMENTED();
+            break;
+        case 0b00111: // SUV
+            NOT_IMPLEMENTED();
+            break;
+        case 0b01000: // SHV
+            NOT_IMPLEMENTED();
+            break;
+        case 0b01001: // SFV
+            NOT_IMPLEMENTED();
+            break;
+        case 0b01011: // STV
+            NOT_IMPLEMENTED();
+            break;
+        default:
+            NOT_IMPLEMENTED();
+            break;
+        }
         break;
     default:
         NOT_IMPLEMENTED();
