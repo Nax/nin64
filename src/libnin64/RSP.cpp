@@ -35,10 +35,14 @@
 #define RS          ((std::uint8_t)((op >> 21) & 0x1f))
 #define BASE        RS
 #define RT          ((std::uint8_t)((op >> 16) & 0x1f))
+#define VT          RT
 #define RD          ((std::uint8_t)((op >> 11) & 0x1f))
+#define OPCODE      RD
 #define SA          ((std::uint8_t)((op >> 6) & 0x1f))
+#define ELEMENT     SA
 #define IMM         ((std::uint16_t)op)
 #define SIMM        ((std::int16_t)op)
+#define OFFSET      ((std::uint16_t)(op & ((1 << 7) - 1)))
 #define JUMP_TARGET ((std::uint32_t)op & 0x3ffffff)
 
 using namespace libnin64;
@@ -73,6 +77,10 @@ void RSP::tick(std::size_t count)
 void RSP::tick()
 {
     std::uint32_t op;
+    std::uint32_t tmp32;
+    std::uint16_t tmp16;
+    std::uint16_t addr;
+    std::uint8_t  tmp8;
 
     if (_halt) return;
 
@@ -273,7 +281,45 @@ void RSP::tick()
         dWrite32(_regs[BASE].u16 + SIMM, _regs[RT].u32);
         break;
     case 062: // LWC2
-        NOT_IMPLEMENTED();
+        switch (OPCODE)
+        {
+        case 0b00000: // LBV
+            NOT_IMPLEMENTED();
+            break;
+        case 0b00001: // LSV
+            NOT_IMPLEMENTED();
+            break;
+        case 0b00010: // LLV
+            NOT_IMPLEMENTED();
+            break;
+        case 0b00011: // LDV
+            NOT_IMPLEMENTED();
+            break;
+        case 0b00100: // LQV
+            NOT_IMPLEMENTED();
+            break;
+        case 0b00101: // LRV
+            NOT_IMPLEMENTED();
+            break;
+        case 0b00110: // LPV
+            NOT_IMPLEMENTED();
+            break;
+        case 0b00111: // LUV
+            NOT_IMPLEMENTED();
+            break;
+        case 0b01000: // LHV
+            NOT_IMPLEMENTED();
+            break;
+        case 0b01001: // LFV
+            NOT_IMPLEMENTED();
+            break;
+        case 0b01011: // LTV
+            NOT_IMPLEMENTED();
+            break;
+        default:
+            NOT_IMPLEMENTED();
+            break;
+        }
         break;
     case 072: // SWC2
         NOT_IMPLEMENTED();

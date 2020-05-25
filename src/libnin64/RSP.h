@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <libnin64/NonCopyable.h>
 
+#include <x86intrin.h>
+
 namespace libnin64
 {
 
@@ -32,6 +34,10 @@ private:
         std::int32_t  i32;
     };
 
+    union VReg {
+        __m128i i;
+    };
+
     void dmaRead(std::uint16_t length, std::uint16_t count, std::uint16_t skip);
     void dmaWrite(std::uint16_t length, std::uint16_t count, std::uint16_t skip);
 
@@ -57,6 +63,7 @@ private:
     std::uint16_t _spAddr;
     std::uint32_t _dramAddr;
     Reg           _regs[32];
+    VReg          _vregs[32];
     std::uint16_t _pc;
     std::uint16_t _pcNext;
 };
