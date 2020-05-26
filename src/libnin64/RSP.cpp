@@ -24,7 +24,9 @@
 #define VT          RT
 #define RD          ((std::uint8_t)((op >> 11) & 0x1f))
 #define OPCODE      RD
+#define VS          RD
 #define SA          ((std::uint8_t)((op >> 6) & 0x1f))
+#define VD          SA
 #define ELEMENT     ((std::uint8_t)((op >> 6) & 0xf))
 #define IMM         ((std::uint16_t)op)
 #define SIMM        ((std::int16_t)op)
@@ -115,6 +117,20 @@ static __m128i vSelect(__m128i v, std::uint8_t e)
     return tmp;
 }
 
+static __m128i vClampSigned(__m128i value, __m128i hi)
+{
+    __m128i signBit;
+    __m128i clampMask;
+    __m128i clampValue;
+    __m128i negMask;
+
+    signBit    = _mm_set1_epi16((short)0x8000);
+    clampMask  = _mm_cmpeq_epi16(hi, _mm_setzero_si128());
+    negMask    = _mm_cmpeq_epi16(_mm_and_si128(hi, signBit), signBit);
+    clampValue = _mm_or_si128(_mm_and_si128(negMask, _mm_set1_epi16((short)0x8000)), _mm_andnot_si128(negMask, _mm_set1_epi16((short)0x7fff)));
+    return _mm_or_si128(_mm_and_si128(clampMask, value), _mm_andnot_si128(clampMask, clampValue));
+}
+
 RSP::RSP(Memory& memory, MIPSInterface& mi)
 : _memory{memory}
 , _mi{mi}
@@ -123,6 +139,10 @@ RSP::RSP(Memory& memory, MIPSInterface& mi)
 , _spAddr{}
 , _dramAddr{}
 , _regs{}
+, _vregs{}
+, _acc_lo{}
+, _acc_md{}
+, _acc_hi{}
 , _pc{0}
 , _pcNext{4}
 {
@@ -145,6 +165,14 @@ void RSP::tick(std::size_t count)
 void RSP::tick()
 {
     alignas(16) char vtmp[16];
+
+    __m128i va;
+    __m128i vb;
+    __m128i vc;
+    __m128i vd;
+    __m128i vcarry;
+    __m128i vhi;
+    __m128i vlo;
 
     std::uint64_t tmp64;
     std::uint32_t op;
@@ -363,7 +391,26 @@ void RSP::tick()
             switch (FUNC)
             {
             case 0b000000: // VMULF (Vector Multiply of Signed Fractions)
-                NOT_IMPLEMENTED();
+                va = vSelect(_vregs[VT].i, E);
+                vb = _vregs[VS].i;
+
+                /* Multiply arguments */
+                vhi = _mm_mulhi_epi16(va, vb);
+                vlo = _mm_mullo_epi16(va, vb);
+
+                /* Insert shifted result into acc */
+                _acc_hi = _mm_or_si128(_mm_slli_epi16(vhi, 1), _mm_srli_epi16(vlo, 15));
+                _acc_md = _mm_slli_epi16(vlo, 1);
+
+                /* Add 0x8000 to the lower acc, extract carry */
+                vc      = _mm_set1_epi16((short)0x8000);
+                vcarry  = _mm_srli_epi16(_mm_and_si128(_acc_lo, vc), 15);
+                _acc_lo = _mm_add_epi16(_acc_lo, vc);
+
+                /* Add carry to the middle acc */
+                _acc_md = _mm_add_epi16(_acc_md, vcarry);
+
+                _vregs[VD].i = vClampSigned(_acc_md, _acc_hi);
                 break;
             case 0b000001:
                 NOT_IMPLEMENTED();
