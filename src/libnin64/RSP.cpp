@@ -433,8 +433,20 @@ void RSP::tick()
             case 0b000111:
                 NOT_IMPLEMENTED();
                 break;
-            case 0b001000:
-                NOT_IMPLEMENTED();
+            case 0b001000: // VMACF
+                va = vSelect(_vregs[VT].i, E);
+                vb = _vregs[VS].i;
+
+                vlo    = _mm_mullo_epi16(va, vb);
+                vcarry = _mm_srli_epi16(_mm_and_si128(vlo, _mm_set1_epi16((short)0x8000)), 15);
+                vlo    = _mm_slli_epi16(vlo, 1);
+                vhi    = _mm_or_si128(_mm_slli_epi16(_mm_mulhi_epi16(va, vb), 1), vcarry);
+
+                vcarry  = _mm_srli_epi16(_mm_and_si128(_mm_and_si128(_acc_md, vlo), _mm_set1_epi16((short)0x8000)), 15);
+                _acc_md = _mm_add_epi16(_acc_md, vlo);
+                _acc_hi = _mm_add_epi16(_mm_add_epi16(_acc_hi, vhi), vcarry);
+
+                _vregs[VD].i = vClampSigned(_acc_md, _acc_hi);
                 break;
             case 0b001001:
                 NOT_IMPLEMENTED();
@@ -640,13 +652,13 @@ void RSP::tick()
         switch (OPCODE)
         {
         case 0b00000: // LBV
-            NOT_IMPLEMENTED();
+            *(uint8_t*)(vtmp + (15 - (ELEMENT & ~0x0))) = dRead8((_regs[BASE].u16 + (OFFSET << 0)) & 0xfff);
             break;
         case 0b00001: // LSV
-            NOT_IMPLEMENTED();
+            *(uint16_t*)(vtmp + (14 - (ELEMENT & ~0x1))) = dRead16((_regs[BASE].u16 + (OFFSET << 1)) & 0xfff);
             break;
         case 0b00010: // LLV
-            NOT_IMPLEMENTED();
+            *(uint32_t*)(vtmp + (12 - (ELEMENT & ~0x3))) = dRead32((_regs[BASE].u16 + (OFFSET << 2)) & 0xfff);
             break;
         case 0b00011: // LDV (Load Double into Vector Register)
             *(uint64_t*)(vtmp + (8 - (ELEMENT & 8))) = dRead64((_regs[BASE].u16 + (OFFSET << 3)) & 0xfff);
@@ -687,19 +699,23 @@ void RSP::tick()
         switch (OPCODE)
         {
         case 0b00000: // SBV
-            NOT_IMPLEMENTED();
+            dWrite8((_regs[BASE].u16 + (OFFSET << 0)) & 0xfff, *(uint8_t*)(vtmp + (15 - (ELEMENT & ~0x0))));
             break;
         case 0b00001: // SSV
-            NOT_IMPLEMENTED();
+            dWrite16((_regs[BASE].u16 + (OFFSET << 1)) & 0xfff, *(uint16_t*)(vtmp + (14 - (ELEMENT & ~0x1))));
             break;
         case 0b00010: // SLV
-            NOT_IMPLEMENTED();
+            dWrite32((_regs[BASE].u16 + (OFFSET << 2)) & 0xfff, *(uint32_t*)(vtmp + (12 - (ELEMENT & ~0x3))));
             break;
         case 0b00011: // SDV (Store Double into Vector Register)
             dWrite64((_regs[BASE].u16 + (OFFSET << 3)) & 0xfff, *(uint64_t*)(vtmp + (8 - (ELEMENT & 8))));
             break;
         case 0b00100: // SQV
-            NOT_IMPLEMENTED();
+            addr = (_regs[BASE].u16 + (OFFSET << 4)) & 0xfff;
+            for (int i = 0; i < 16 - (addr & 0xf); ++i)
+            {
+                dWrite8((addr & 0xff0) + i, vtmp[15 - i]);
+            }
             break;
         case 0b00101: // SRV
             NOT_IMPLEMENTED();
