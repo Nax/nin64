@@ -50,6 +50,71 @@
 
 using namespace libnin64;
 
+static __m128i vSelect(__m128i v, std::uint8_t e)
+{
+    __m128i tmp;
+
+    switch (e & 0b1111)
+    {
+    case 0b0000: // Whole vector (01234567)
+        tmp = v;
+        break;
+    case 0b0001: // Undefined
+        tmp = _mm_setzero_si128();
+        break;
+    case 0b0010: // 00224466
+        tmp = _mm_shufflelo_epi16(v, _MM_SHUFFLE(2, 2, 0, 0));
+        tmp = _mm_shufflehi_epi16(tmp, _MM_SHUFFLE(2, 2, 0, 0));
+        break;
+    case 0b0011: // 11335577
+        tmp = _mm_shufflelo_epi16(v, _MM_SHUFFLE(3, 3, 1, 1));
+        tmp = _mm_shufflehi_epi16(tmp, _MM_SHUFFLE(3, 3, 1, 1));
+        break;
+    case 0b0100: // 00004444
+        tmp = _mm_shufflelo_epi16(v, _MM_SHUFFLE(0, 0, 0, 0));
+        tmp = _mm_shufflehi_epi16(tmp, _MM_SHUFFLE(0, 0, 0, 0));
+        break;
+    case 0b0101: // 11115555
+        tmp = _mm_shufflelo_epi16(v, _MM_SHUFFLE(1, 1, 1, 1));
+        tmp = _mm_shufflehi_epi16(tmp, _MM_SHUFFLE(1, 1, 1, 1));
+        break;
+    case 0b0110: // 22226666
+        tmp = _mm_shufflelo_epi16(v, _MM_SHUFFLE(2, 2, 2, 2));
+        tmp = _mm_shufflehi_epi16(tmp, _MM_SHUFFLE(2, 2, 2, 2));
+        break;
+    case 0b0111: // 33337777
+        tmp = _mm_shufflelo_epi16(v, _MM_SHUFFLE(3, 3, 3, 3));
+        tmp = _mm_shufflehi_epi16(tmp, _MM_SHUFFLE(3, 3, 3, 3));
+        break;
+    case 0b1000: // 00000000
+        tmp = _mm_set1_epi16(_mm_extract_epi16(v, 0));
+        break;
+    case 0b1001: // 11111111
+        tmp = _mm_set1_epi16(_mm_extract_epi16(v, 1));
+        break;
+    case 0b1010: // 22222222
+        tmp = _mm_set1_epi16(_mm_extract_epi16(v, 2));
+        break;
+    case 0b1011: // 33333333
+        tmp = _mm_set1_epi16(_mm_extract_epi16(v, 3));
+        break;
+    case 0b1100: // 44444444
+        tmp = _mm_set1_epi16(_mm_extract_epi16(v, 4));
+        break;
+    case 0b1101: // 55555555
+        tmp = _mm_set1_epi16(_mm_extract_epi16(v, 5));
+        break;
+    case 0b1110: // 66666666
+        tmp = _mm_set1_epi16(_mm_extract_epi16(v, 6));
+        break;
+    case 0b1111: // 77777777
+        tmp = _mm_set1_epi16(_mm_extract_epi16(v, 7));
+        break;
+    }
+
+    return tmp;
+}
+
 RSP::RSP(Memory& memory, MIPSInterface& mi)
 : _memory{memory}
 , _mi{mi}

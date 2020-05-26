@@ -5,7 +5,11 @@
 #include <cstdint>
 #include <libnin64/NonCopyable.h>
 
+#if defined(_MSC_VER)
+#include <intrin.h>
+#else
 #include <x86intrin.h>
+#endif
 
 namespace libnin64
 {
@@ -47,7 +51,7 @@ private:
     std::uint8_t  dRead8(std::uint16_t addr) { return dRead<uint8_t>(addr); }
     std::uint16_t dRead16(std::uint16_t addr) { return dRead<uint16_t>(addr); }
     std::uint32_t dRead32(std::uint16_t addr) { return dRead<uint32_t>(addr); }
-    std::uint32_t dRead64(std::uint16_t addr) { return dRead<uint64_t>(addr); }
+    std::uint64_t dRead64(std::uint16_t addr) { return dRead<uint64_t>(addr); }
 
     void dWrite8(std::uint16_t addr, std::uint8_t value) { dWrite<uint8_t>(addr, value); }
     void dWrite16(std::uint16_t addr, std::uint16_t value) { dWrite<uint16_t>(addr, value); }
