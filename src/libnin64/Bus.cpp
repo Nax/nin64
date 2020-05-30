@@ -5,6 +5,7 @@
 #include <libnin64/MIPSInterface.h>
 #include <libnin64/Memory.h>
 #include <libnin64/PeripheralInterface.h>
+#include <libnin64/RDP.h>
 #include <libnin64/RSP.h>
 #include <libnin64/SerialInterface.h>
 #include <libnin64/Util.h>
@@ -13,7 +14,7 @@
 using namespace libnin64;
 
 // https://raw.githubusercontent.com/mikeryan/n64dev/master/docs/n64ops/n64ops%23h.txt
-Bus::Bus(Memory& memory, Cart& cart, MIPSInterface& mi, PeripheralInterface& pi, SerialInterface& si, VideoInterface& vi, RSP& rsp)
+Bus::Bus(Memory& memory, Cart& cart, MIPSInterface& mi, PeripheralInterface& pi, SerialInterface& si, VideoInterface& vi, RSP& rsp, RDP& rdp)
 : _memory{memory}
 , _cart{cart}
 , _mi{mi}
@@ -21,6 +22,7 @@ Bus::Bus(Memory& memory, Cart& cart, MIPSInterface& mi, PeripheralInterface& pi,
 , _si{si}
 , _vi{vi}
 , _rsp{rsp}
+, _rdp{rdp}
 {
 }
 
@@ -42,7 +44,9 @@ template <typename T> T Bus::read(std::uint32_t addr)
         value = swap(*(T*)(_memory.spImem + (addr & 0xfff)));
     else if (addr >= 0x04040000 && addr <= 0x0404ffff)
         value = T(_rsp.read(addr));
-    else if (addr >= 0x04300000 && addr <= 0x043fffff) //  MIPS Interface (MI) Registers
+    else if (addr >= 0x04100000 && addr <= 0x042fffff) // DP Registers
+        value = T(_rdp.read(addr));
+    else if (addr >= 0x04300000 && addr <= 0x043fffff) // MIPS Interface (MI) Registers
         value = T(_mi.read(addr));
     else if (addr >= 0x04400000 && addr <= 0x044fffff) // Video Interface (VI) Registers
         value = T(_vi.read(addr));
@@ -78,13 +82,15 @@ template <typename T> void Bus::write(std::uint32_t addr, T value)
         *(T*)(_memory.spImem + (addr & 0xfff)) = swap(value);
     else if (addr >= 0x04040000 && addr <= 0x0408ffff)
         _rsp.write(addr, (std::uint32_t)value);
-    else if (addr >= 0x04300000 && addr <= 0x043fffff) //  MIPS Interface (MI) Registers
+    else if (addr >= 0x04100000 && addr <= 0x042fffff) // DP Registers
+        _rdp.write(addr, (std::uint32_t)value);
+    else if (addr >= 0x04300000 && addr <= 0x043fffff) // MIPS Interface (MI) Registers
         _mi.write(addr, (std::uint32_t)value);
-    else if (addr >= 0x04400000 && addr <= 0x044fffff) //  Video Interface (VI) Registers
+    else if (addr >= 0x04400000 && addr <= 0x044fffff) // Video Interface (VI) Registers
         _vi.write(addr, (std::uint32_t)value);
-    else if (addr >= 0x04600000 && addr <= 0x046fffff) //  Peripheral Interface (PI) Registers
+    else if (addr >= 0x04600000 && addr <= 0x046fffff) // Peripheral Interface (PI) Registers
         _pi.write(addr, (std::uint32_t)value);
-    else if (addr >= 0x04800000 && addr <= 0x048fffff) //  Serial Interface (SI) Registers
+    else if (addr >= 0x04800000 && addr <= 0x048fffff) // Serial Interface (SI) Registers
         _si.write(addr, (std::uint32_t)value);
     else
     {

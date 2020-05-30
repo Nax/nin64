@@ -9,8 +9,9 @@ State::State()
 , pi{mi, memory, cart}
 , si{mi}
 , vi{mi}
-, rsp{memory, mi}
-, bus{memory, cart, mi, pi, si, vi, rsp}
+, rdp{memory, mi}
+, rsp{memory, mi, rdp}
+, bus{memory, cart, mi, pi, si, vi, rsp, rdp}
 , cpu{bus, mi}
 {
 }

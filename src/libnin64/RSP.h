@@ -16,10 +16,11 @@ namespace libnin64
 
 class Memory;
 class MIPSInterface;
+class RDP;
 class RSP : private NonCopyable
 {
 public:
-    RSP(Memory& memory, MIPSInterface& mi);
+    RSP(Memory& memory, MIPSInterface& mi, RDP& rdp);
     ~RSP();
 
     void tick(std::size_t count);
@@ -63,9 +64,11 @@ private:
 
     Memory&        _memory;
     MIPSInterface& _mi;
+    RDP&           _rdp;
 
     bool          _halt : 1;
     bool          _semaphore : 1;
+    std::uint8_t  _signal;
     std::uint16_t _spAddr;
     std::uint32_t _dramAddr;
     Reg           _regs[32];

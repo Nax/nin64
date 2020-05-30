@@ -8,6 +8,7 @@
 #include <libnin64/Memory.h>
 #include <libnin64/NonCopyable.h>
 #include <libnin64/PeripheralInterface.h>
+#include <libnin64/RDP.h>
 #include <libnin64/RSP.h>
 #include <libnin64/SerialInterface.h>
 #include <libnin64/VideoInterface.h>
@@ -29,6 +30,7 @@ public:
     PeripheralInterface pi;
     SerialInterface     si;
     VideoInterface      vi;
+    RDP                 rdp;
     RSP                 rsp;
     Bus                 bus;
     CPU                 cpu;

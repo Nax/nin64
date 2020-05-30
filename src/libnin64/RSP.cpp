@@ -3,6 +3,7 @@
 #include <cstring>
 #include <libnin64/MIPSInterface.h>
 #include <libnin64/Memory.h>
+#include <libnin64/RDP.h>
 #include <libnin64/RSP.h>
 #include <libnin64/Util.h>
 
@@ -131,10 +132,12 @@ static __m128i vClampSigned(__m128i value, __m128i hi)
     return _mm_or_si128(_mm_and_si128(clampMask, value), _mm_andnot_si128(clampMask, clampValue));
 }
 
-RSP::RSP(Memory& memory, MIPSInterface& mi)
+RSP::RSP(Memory& memory, MIPSInterface& mi, RDP& rdp)
 : _memory{memory}
 , _mi{mi}
+, _rdp{rdp}
 , _halt{true}
+, _signal{}
 , _semaphore{}
 , _spAddr{}
 , _dramAddr{}
@@ -218,7 +221,7 @@ void RSP::tick()
             _regs[RD].u32 = (_pc + 4) & 0xfff;
             break;
         case 015: // BREAK (Halt the RSP)
-            NOT_IMPLEMENTED();
+            _halt = true;
             break;
         case 040: // ADD (Add)
         case 041: // ADDU (Add Unsigned)
@@ -807,8 +810,7 @@ void RSP::write(std::uint32_t reg, std::uint32_t value)
         dmaRead((value & 0xfff) + 1, ((value >> 12) & 0xff) + 1, value >> 20);
         break;
     case SP_WR_LEN_REG:
-        std::puts("WRITE::SP_WR_LEN_REG NOT IMPLEMENTED");
-        exit(42);
+        dmaWrite((value & 0xfff) + 1, ((value >> 12) & 0xff) + 1, value >> 20);
         break;
     case SP_STATUS_REG:
         if (value & (1 << 0))
@@ -871,7 +873,29 @@ void RSP::dmaRead(std::uint16_t length, std::uint16_t count, std::uint16_t skip)
 
 void RSP::dmaWrite(std::uint16_t length, std::uint16_t count, std::uint16_t skip)
 {
+    std::uint8_t* src;
+    std::uint8_t* dst;
+
     std::printf("SP DMA (Write)!\n");
+
+    dst = _memory.ram + _dramAddr;
+
+    if (_spAddr & 0x1000)
+        src = _memory.spImem + (_spAddr & 0xfff);
+    else
+        src = _memory.spDmem + _spAddr;
+
+    if (skip == 0)
+    {
+        std::memcpy(dst, src, length * count);
+    }
+    else
+    {
+        for (int i = 0; i < count; ++i)
+        {
+            std::memcpy(dst + i * length, src + i * (length + skip), length);
+        }
+    }
 }
 
 template <typename T> T RSP::dRead(std::uint16_t addr)
@@ -919,28 +943,28 @@ std::uint32_t RSP::cop0Read(std::uint8_t reg)
         value = read(SP_SEMAPHORE_REG);
         break;
     case 8:
-        // TODO: RDP
+        value = _rdp.read(DPC_START_REG);
         break;
     case 9:
-        // TODO: RDP
+        value = _rdp.read(DPC_END_REG);
         break;
     case 10:
-        // TODO: RDP
+        value = _rdp.read(DPC_CURRENT_REG);
         break;
     case 11:
-        // TODO: RDP
+        value = _rdp.read(DPC_STATUS_REG);
         break;
     case 12:
-        // TODO: RDP
+        value = _rdp.read(DPC_CLOCK_REG);
         break;
     case 13:
-        // TODO: RDP
+        value = _rdp.read(DPC_BUFBUSY_REG);
         break;
     case 14:
-        // TODO: RDP
+        value = _rdp.read(DPC_PIPEBUSY_REG);
         break;
     case 15:
-        // TODO: RDP
+        value = _rdp.read(DPC_TMEM_REG);
         break;
     }
 
@@ -976,28 +1000,28 @@ void RSP::cop0Write(std::uint8_t reg, std::uint32_t value)
         write(SP_SEMAPHORE_REG, value);
         break;
     case 8:
-        // TODO: RDP
+        write(DPC_START_REG, value);
         break;
     case 9:
-        // TODO: RDP
+        write(DPC_END_REG, value);
         break;
     case 10:
-        // TODO: RDP
+        write(DPC_CURRENT_REG, value);
         break;
     case 11:
-        // TODO: RDP
+        write(DPC_STATUS_REG, value);
         break;
     case 12:
-        // TODO: RDP
+        write(DPC_CLOCK_REG, value);
         break;
     case 13:
-        // TODO: RDP
+        write(DPC_BUFBUSY_REG, value);
         break;
     case 14:
-        // TODO: RDP
+        write(DPC_PIPEBUSY_REG, value);
         break;
     case 15:
-        // TODO: RDP
+        write(DPC_TMEM_REG, value);
         break;
     }
 }
