@@ -67,7 +67,9 @@ private:
     RDP&           _rdp;
 
     bool          _halt : 1;
+    bool          _broke : 1;
     bool          _semaphore : 1;
+    bool          _interruptOnBreak : 1;
     std::uint8_t  _signal;
     std::uint16_t _spAddr;
     std::uint32_t _dramAddr;

@@ -1,6 +1,7 @@
 #ifndef INCLUDED_STATE_H
 #define INCLUDED_STATE_H
 
+#include <libnin64/AudioInterface.h>
 #include <libnin64/Bus.h>
 #include <libnin64/CPU.h>
 #include <libnin64/Cart.h>
@@ -30,6 +31,7 @@ public:
     PeripheralInterface pi;
     SerialInterface     si;
     VideoInterface      vi;
+    AudioInterface      ai;
     RDP                 rdp;
     RSP                 rsp;
     Bus                 bus;

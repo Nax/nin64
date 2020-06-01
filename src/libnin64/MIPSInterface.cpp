@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <libnin64/MIPSInterface.h>
 
 #define MI_INIT_MODE_REG 0x04300000
@@ -87,6 +88,7 @@ bool MIPSInterface::checkInterrupt(std::uint8_t intr) const
 
 void MIPSInterface::setInterrupt(std::uint8_t intr)
 {
+    //std::printf("MI Interrupt: 0x%02x\n", intr);
     _interrupts |= intr;
 }
 

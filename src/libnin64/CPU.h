@@ -17,6 +17,8 @@ public:
     CPU(Bus& bus, MIPSInterface& mi);
     ~CPU();
 
+    std::uint64_t pc() const { return _pc; }
+
     void init(CIC cic);
     void tick(std::size_t count);
     void tick();

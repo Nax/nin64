@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <libnin64/State.h>
 #include <nin64/nin64.h>
 
@@ -39,7 +40,15 @@ NIN64_API Nin64Err nin64RunFrame(Nin64State* state)
     {
         state->cpu.tick(32);
         state->rsp.tick(24);
+        state->ai.tick(32);
     }
+    std::printf("PC:0x%016llx\n", state->cpu.pc());
     state->vi.setVBlank();
+    return NIN64_OK;
+}
+
+NIN64_API Nin64Err nin64SetAudioCallback(Nin64State* state, Nin64AudioCallback callback, void* callbackArg)
+{
+    state->ai.setCallback(callback, callbackArg);
     return NIN64_OK;
 }

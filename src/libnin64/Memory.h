@@ -13,11 +13,12 @@ public:
     Memory();
     ~Memory();
 
-    std::uint8_t    ram[8 * 1024 * 1024];
-    std::uint8_t    spDmem[0x1000];
-    std::uint8_t    spImem[0x1000];
+    std::uint8_t ram[8 * 1024 * 1024];
+    std::uint8_t spDmem[0x1000];
+    std::uint8_t spImem[0x1000];
+    std::uint8_t pif[0x40];
 };
 
-}
+} // namespace libnin64
 
 #endif

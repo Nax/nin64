@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
+#include <libnin64/AudioInterface.h>
 #include <libnin64/Bus.h>
 #include <libnin64/Cart.h>
 #include <libnin64/MIPSInterface.h>
@@ -14,13 +15,14 @@
 using namespace libnin64;
 
 // https://raw.githubusercontent.com/mikeryan/n64dev/master/docs/n64ops/n64ops%23h.txt
-Bus::Bus(Memory& memory, Cart& cart, MIPSInterface& mi, PeripheralInterface& pi, SerialInterface& si, VideoInterface& vi, RSP& rsp, RDP& rdp)
+Bus::Bus(Memory& memory, Cart& cart, MIPSInterface& mi, PeripheralInterface& pi, SerialInterface& si, VideoInterface& vi, AudioInterface& ai, RSP& rsp, RDP& rdp)
 : _memory{memory}
 , _cart{cart}
 , _mi{mi}
 , _pi{pi}
 , _si{si}
 , _vi{vi}
+, _ai{ai}
 , _rsp{rsp}
 , _rdp{rdp}
 {
@@ -42,7 +44,7 @@ template <typename T> T Bus::read(std::uint32_t addr)
         value = swap(*(T*)(_memory.spDmem + (addr & 0xfff)));
     else if (addr < 0x04002000)
         value = swap(*(T*)(_memory.spImem + (addr & 0xfff)));
-    else if (addr >= 0x04040000 && addr <= 0x0404ffff)
+    else if (addr >= 0x04040000 && addr <= 0x0408ffff)
         value = T(_rsp.read(addr));
     else if (addr >= 0x04100000 && addr <= 0x042fffff) // DP Registers
         value = T(_rdp.read(addr));
@@ -50,6 +52,8 @@ template <typename T> T Bus::read(std::uint32_t addr)
         value = T(_mi.read(addr));
     else if (addr >= 0x04400000 && addr <= 0x044fffff) // Video Interface (VI) Registers
         value = T(_vi.read(addr));
+    else if (addr >= 0x04500000 && addr <= 0x045fffff) // Audio Interface (AI) Registers
+        value = T(_ai.read(addr));
     else if (addr >= 0x04600000 && addr <= 0x046fffff) // Peripheral Interface (PI) Registers
         value = T(_pi.read(addr));
     else if (addr >= 0x04800000 && addr <= 0x048fffff) // Serial Interface (SI) Registers
@@ -59,6 +63,8 @@ template <typename T> T Bus::read(std::uint32_t addr)
         _cart.read((std::uint8_t*)&value, addr - 0x10000000, sizeof(T));
         value = swap(value);
     }
+    else if (addr >= 0x1fc007c0 && addr <= 0x1fc007ff) // PIF RAM
+        value = swap(*(T*)(_memory.pif + (addr & 0x3f)));
     else
     {
         value = 0;
@@ -88,10 +94,14 @@ template <typename T> void Bus::write(std::uint32_t addr, T value)
         _mi.write(addr, (std::uint32_t)value);
     else if (addr >= 0x04400000 && addr <= 0x044fffff) // Video Interface (VI) Registers
         _vi.write(addr, (std::uint32_t)value);
+    else if (addr >= 0x04500000 && addr <= 0x045fffff) // Audio Interface (AI) Registers
+        _ai.write(addr, (std::uint32_t)value);
     else if (addr >= 0x04600000 && addr <= 0x046fffff) // Peripheral Interface (PI) Registers
         _pi.write(addr, (std::uint32_t)value);
     else if (addr >= 0x04800000 && addr <= 0x048fffff) // Serial Interface (SI) Registers
         _si.write(addr, (std::uint32_t)value);
+    else if (addr >= 0x1fc007c0 && addr <= 0x1fc007ff) // PIF RAM
+        *(T*)(_memory.pif + (addr & 0x3f)) = swap(value);
     else
     {
         std::printf("WARN: Write: Accessing not mapped memory zone: 0x%08x.\n", addr);

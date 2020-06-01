@@ -6,6 +6,7 @@ Memory::Memory()
 : ram{}
 , spDmem{}
 , spImem{}
+, pif{}
 {
 }
 

@@ -235,7 +235,6 @@ void CPU::tick()
 
     if (_ie && !_erl && !_exl && (_im & (_ip | _mi.ip())))
     {
-        std::printf("INTERRUPT !!!\n");
         _bd          = _branchDelay;
         _branchDelay = false;
         _exl         = true;
@@ -246,7 +245,7 @@ void CPU::tick()
 
     // For current tick
     op = _bus.read32((std::uint32_t)_pc);
-    //std::printf("PC: 0x%016llx OP: 0x%08x Details:%02o %02o %02o %02o %02o %02o\n", _pc,  op, (op >> 26), ((op >> 21) & 0x1f), ((op >> 16) & 0x1f), ((op >> 11) & 0x1f), ((op >> 06) & 0x1f), ((op >> 00) & 0x3f));
+    //std::printf("PC: 0x%016llx OP: 0x%08x Details:%02o %02o %02o %02o %02o %02o\n", _pc, op, (op >> 26), ((op >> 21) & 0x1f), ((op >> 16) & 0x1f), ((op >> 11) & 0x1f), ((op >> 06) & 0x1f), ((op >> 00) & 0x3f));
     //for (int i = 0; i < 32; ++i) { std::printf("  REG %02d: 0x%016llx\n", i, _regs[i].u64); }
 
     // For next tick

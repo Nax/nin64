@@ -137,8 +137,10 @@ RSP::RSP(Memory& memory, MIPSInterface& mi, RDP& rdp)
 , _mi{mi}
 , _rdp{rdp}
 , _halt{true}
+, _broke{}
 , _signal{}
 , _semaphore{}
+, _interruptOnBreak{}
 , _spAddr{}
 , _dramAddr{}
 , _regs{}
@@ -221,7 +223,11 @@ void RSP::tick()
             _regs[RD].u32 = (_pc + 4) & 0xfff;
             break;
         case 015: // BREAK (Halt the RSP)
-            _halt = true;
+            //std::printf("RSP BREAK\n");
+            _halt  = true;
+            _broke = true;
+            if (_interruptOnBreak)
+                _mi.setInterrupt(MI_INTR_SP);
             break;
         case 040: // ADD (Add)
         case 041: // ADDU (Add Unsigned)
@@ -773,6 +779,9 @@ std::uint32_t RSP::read(std::uint32_t reg)
         break;
     case SP_STATUS_REG:
         if (_halt) value |= 0x00000001;
+        if (_broke) value |= 0x00000002;
+        if (_interruptOnBreak) value |= 0x00000040;
+        value |= ((std::uint32_t)_signal << 7);
         break;
     case SP_DMA_FULL_REG:
         break;
@@ -813,12 +822,33 @@ void RSP::write(std::uint32_t reg, std::uint32_t value)
         dmaWrite((value & 0xfff) + 1, ((value >> 12) & 0xff) + 1, value >> 20);
         break;
     case SP_STATUS_REG:
-        if (value & (1 << 0))
+        if (value & 0x00000001)
         {
             _halt = false;
-            std::printf("RSP START!!!\n");
+            //std::printf("RSP START!!!\n");
         }
-        if (value & (1 << 1)) _halt = true;
+        if (value & 0x00000002) _halt = true;
+        if (value & 0x00000004) _broke = false;
+        if (value & 0x00000008) _mi.clearInterrupt(MI_INTR_SP);
+        if (value & 0x00000010) _mi.setInterrupt(MI_INTR_SP);
+        if (value & 0x00000080) _interruptOnBreak = false;
+        if (value & 0x00000100) _interruptOnBreak = true;
+        if (value & 0x00000200) _signal &= ~(0x01);
+        if (value & 0x00000400) _signal |= 0x01;
+        if (value & 0x00000800) _signal &= ~(0x02);
+        if (value & 0x00001000) _signal |= 0x02;
+        if (value & 0x00002000) _signal &= ~(0x04);
+        if (value & 0x00004000) _signal |= 0x04;
+        if (value & 0x00008000) _signal &= ~(0x08);
+        if (value & 0x00010000) _signal |= 0x08;
+        if (value & 0x00020000) _signal &= ~(0x10);
+        if (value & 0x00040000) _signal |= 0x10;
+        if (value & 0x00080000) _signal &= ~(0x20);
+        if (value & 0x00100000) _signal |= 0x20;
+        if (value & 0x00200000) _signal &= ~(0x40);
+        if (value & 0x00400000) _signal |= 0x40;
+        if (value & 0x00800000) _signal &= ~(0x80);
+        if (value & 0x01000000) _signal |= 0x80;
         break;
     case SP_DMA_FULL_REG:
         std::puts("WRITE::SP_DMA_FULL_REG NOT IMPLEMENTED");
@@ -849,7 +879,7 @@ void RSP::dmaRead(std::uint16_t length, std::uint16_t count, std::uint16_t skip)
     std::uint8_t* src;
     std::uint8_t* dst;
 
-    std::printf("SP DMA (Read)!\n");
+    //std::printf("SP DMA (Read)!  SPADDR:0x%04x ADDR:0x%08x L:0x%04x C:0x%04x S:0x%04x\n", _spAddr, _dramAddr, length, count, skip);
 
     src = _memory.ram + _dramAddr;
 
@@ -876,7 +906,7 @@ void RSP::dmaWrite(std::uint16_t length, std::uint16_t count, std::uint16_t skip
     std::uint8_t* src;
     std::uint8_t* dst;
 
-    std::printf("SP DMA (Write)!\n");
+    //std::printf("SP DMA (Write)! SPADDR:0x%04x ADDR:0x%08x L:0x%04x C:0x%04x S:0x%04x\n", _spAddr, _dramAddr, length, count, skip);
 
     dst = _memory.ram + _dramAddr;
 
@@ -1000,28 +1030,28 @@ void RSP::cop0Write(std::uint8_t reg, std::uint32_t value)
         write(SP_SEMAPHORE_REG, value);
         break;
     case 8:
-        write(DPC_START_REG, value);
+        _rdp.write(DPC_START_REG, value);
         break;
     case 9:
-        write(DPC_END_REG, value);
+        _rdp.write(DPC_END_REG, value);
         break;
     case 10:
-        write(DPC_CURRENT_REG, value);
+        _rdp.write(DPC_CURRENT_REG, value);
         break;
     case 11:
-        write(DPC_STATUS_REG, value);
+        _rdp.write(DPC_STATUS_REG, value);
         break;
     case 12:
-        write(DPC_CLOCK_REG, value);
+        _rdp.write(DPC_CLOCK_REG, value);
         break;
     case 13:
-        write(DPC_BUFBUSY_REG, value);
+        _rdp.write(DPC_BUFBUSY_REG, value);
         break;
     case 14:
-        write(DPC_PIPEBUSY_REG, value);
+        _rdp.write(DPC_PIPEBUSY_REG, value);
         break;
     case 15:
-        write(DPC_TMEM_REG, value);
+        _rdp.write(DPC_TMEM_REG, value);
         break;
     }
 }
