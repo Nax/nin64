@@ -21,6 +21,8 @@ public:
 
 private:
     MIPSInterface& _mi;
+
+    bool _sync : 1;
 };
 
 } // namespace libnin64

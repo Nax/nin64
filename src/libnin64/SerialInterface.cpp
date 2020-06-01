@@ -47,6 +47,7 @@ void SerialInterface::write(std::uint32_t reg, std::uint32_t value)
     case SI_DRAM_ADDR_REG:
         break;
     case SI_PIF_ADDR_RD64B_REG:
+        _mi.setInterrupt(MI_INTR_SI);
         break;
     case SI_PIF_ADDR_WR64B_REG:
         _mi.setInterrupt(MI_INTR_SI);
