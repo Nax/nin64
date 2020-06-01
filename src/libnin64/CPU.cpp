@@ -1139,16 +1139,32 @@ void CPU::tick()
         _regs[RT].u64 = tmp;
         break;
     case 040: // LB (Load Byte)
-        _regs[RT].i64 = (std::int8_t)_bus.read8(_regs[RS].u32 + SIMM);
+        _regs[RT].u64 = sext(_bus.read8(_regs[RS].u32 + SIMM));
         break;
     case 041: // LH (Load Halfword)
-        _regs[RT].i64 = (std::int16_t)_bus.read16(_regs[RS].u32 + SIMM);
+        _regs[RT].u64 = sext(_bus.read16(_regs[RS].u32 + SIMM));
         break;
     case 042: // LWL (Load Word Left)
-        NOT_IMPLEMENTED();
+        tmp  = _regs[RS].u32 + SIMM;
+        tmp2 = _bus.read32(tmp & ~0x3);
+        switch (tmp & 0x3)
+        {
+        case 0x00:
+            _regs[RT].u64 = sext(tmp2);
+            break;
+        case 0x01:
+            _regs[RT].u64 = sext((_regs[RT].u32 & 0x000000ff) | ((tmp2 & 0x00ffffff) << 8));
+            break;
+        case 0x02:
+            _regs[RT].u64 = sext((_regs[RT].u32 & 0x0000ffff) | ((tmp2 & 0x0000ffff) << 16));
+            break;
+        case 0x03:
+            _regs[RT].u64 = sext((_regs[RT].u32 & 0x00ffffff) | ((tmp2 & 0x000000ff) << 24));
+            break;
+        }
         break;
     case 043: // LW (Load Word)
-        _regs[RT].i64 = (std::int32_t)_bus.read32(_regs[RS].u32 + SIMM);
+        _regs[RT].u64 = sext(_bus.read32(_regs[RS].u32 + SIMM));
         break;
     case 044: // LBU (Load Byte Unsigned)
         _regs[RT].u64 = _bus.read8(_regs[RS].u32 + SIMM);
@@ -1157,7 +1173,23 @@ void CPU::tick()
         _regs[RT].u64 = _bus.read16(_regs[RS].u32 + SIMM);
         break;
     case 046: // LWR
-        NOT_IMPLEMENTED();
+        tmp  = _regs[RS].u32 + SIMM;
+        tmp2 = _bus.read32(tmp & ~0x3);
+        switch (tmp & 0x3)
+        {
+        case 0x00:
+            _regs[RT].u64 = sext((tmp2 >> 24) | (_regs[RT].u32 & 0xffffff00));
+            break;
+        case 0x01:
+            _regs[RT].u64 = sext((tmp2 >> 16) | (_regs[RT].u32 & 0xffff0000));
+            break;
+        case 0x02:
+            _regs[RT].u64 = sext((tmp2 >> 8) | (_regs[RT].u32 & 0xff000000));
+            break;
+        case 0x03:
+            _regs[RT].u64 = sext(tmp2);
+            break;
+        }
         break;
     case 047: // LWU
         _regs[RT].u64 = _bus.read32(_regs[RS].u32 + SIMM);

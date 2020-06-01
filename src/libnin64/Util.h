@@ -3,22 +3,26 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <type_traits>
 
 #if defined(_WIN32)
-# include <intrin.h>
+#include <intrin.h>
 #endif
 
 namespace libnin64
 {
+
+template <typename T> inline static std::uint64_t zext(T value) { return static_cast<std::make_unsigned<T>::type>(value); }
+template <typename T> inline static std::uint64_t sext(T value) { return static_cast<std::uint64_t>(static_cast<std::int64_t>(static_cast<std::make_signed<T>::type>(value))); }
 
 inline static void mul128(std::int64_t a, std::int64_t b, std::int64_t* lo, std::int64_t* hi)
 {
 #if defined(_WIN32)
     *lo = _mul128(a, b, hi);
 #else
-    __int128_t res = (__int128_t)a * (__int128_t)b;
-    *lo = (res & 0xffffffffffffffffull);
-    *hi = (res >> 64);
+    __int128_t res  = (__int128_t)a * (__int128_t)b;
+    *lo             = (res & 0xffffffffffffffffull);
+    *hi             = (res >> 64);
 #endif
 }
 
@@ -28,8 +32,8 @@ inline static void umul128(std::uint64_t a, std::uint64_t b, std::uint64_t* lo, 
     *lo = _umul128(a, b, hi);
 #else
     __uint128_t res = (__uint128_t)a * (__uint128_t)b;
-    *lo = (res & 0xffffffffffffffffull);
-    *hi = (res >> 64);
+    *lo             = (res & 0xffffffffffffffffull);
+    *hi             = (res >> 64);
 #endif
 }
 
@@ -57,8 +61,8 @@ inline static constexpr std::uint64_t swap(std::uint64_t v)
     out |= ((v << 56) & 0xff00000000000000ULL);
     out |= ((v << 40) & 0x00ff000000000000ULL);
     out |= ((v << 24) & 0x0000ff0000000000ULL);
-    out |= ((v << 8)  & 0x000000ff00000000ULL);
-    out |= ((v >> 8)  & 0x00000000ff000000ULL);
+    out |= ((v << 8) & 0x000000ff00000000ULL);
+    out |= ((v >> 8) & 0x00000000ff000000ULL);
     out |= ((v >> 24) & 0x0000000000ff0000ULL);
     out |= ((v >> 40) & 0x000000000000ff00ULL);
     out |= ((v >> 56) & 0x00000000000000ffULL);
@@ -70,6 +74,6 @@ inline static constexpr std::uint16_t swap16(std::uint16_t v) { return swap(v); 
 inline static constexpr std::uint32_t swap32(std::uint32_t v) { return swap(v); }
 inline static constexpr std::uint64_t swap64(std::uint64_t v) { return swap(v); }
 
-}
+} // namespace libnin64
 
 #endif
