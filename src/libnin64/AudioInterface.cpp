@@ -80,19 +80,25 @@ std::uint32_t AudioInterface::read(std::uint32_t reg)
     switch (reg)
     {
     case AI_DRAM_ADDR_REG:
+        std::printf("AI Read: AI_DRAM_ADDR_REG\n");
         break;
     case AI_LEN_REG:
+        std::printf("AI Read: AI_LEN_REG\n");
         value = _len[0];
         break;
     case AI_CONTROL_REG:
+        std::printf("AI Read: AI_CONTROL_REG\n");
         break;
     case AI_STATUS_REG:
+        std::printf("AI Read: AI_STATUS_REG\n");
         if (_bufCount == 2) value |= 0x80000001;
         if (_bufCount) value |= 0x40000000;
         break;
     case AI_DACRATE_REG:
+        std::printf("AI Read: AI_DACRATE_REG\n");
         break;
     case AI_BITRATE_REG:
+        std::printf("AI Read: AI_BITRATE_REG\n");
         break;
     }
 
@@ -104,27 +110,33 @@ void AudioInterface::write(std::uint32_t reg, std::uint32_t value)
     switch (reg)
     {
     case AI_DRAM_ADDR_REG:
+        std::printf("AI Write: AI_DRAM_ADDR_REG 0x%08x\n", value);
         //std::printf("Audio DMA ADDR: 0x%08x\n", value);
         _addr = value & 0x00fffff8;
         break;
     case AI_LEN_REG:
+        std::printf("AI Write: AI_LEN_REG 0x%08x\n", value);
         //std::printf("Audio DMA: 0x%08x\n", value);
         //std::printf("AI Write: AI_LEN_REG\n");
         dma(value & 0x3fff8);
         break;
     case AI_CONTROL_REG:
+        std::printf("AI Write: AI_CONTROL_REG 0x%08x\n", value);
         // TODO: Implement this
         break;
     case AI_STATUS_REG:
+        std::printf("AI Write: AI_STATUS_REG 0x%08x\n", value);
         _mi.clearInterrupt(MI_INTR_AI);
         break;
     case AI_DACRATE_REG:
+        std::printf("AI Write: AI_DACRATE_REG 0x%08x\n", value);
         // TODO: Implement this
         //std::printf("DAC Rate: 0x%08x\n", (48681812 / (value + 1)));
         //std::printf("AI Write: AI_DACRATE_REG\n");
         //std::exit(1);
         break;
     case AI_BITRATE_REG:
+        std::printf("AI Write: AI_BITRATE_REG 0x%08x\n", value);
         // TODO: Implement this
         break;
     }

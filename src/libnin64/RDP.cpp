@@ -33,8 +33,9 @@ std::uint32_t RDP::read(std::uint32_t reg)
         std::exit(1);
         break;
     case DPC_STATUS_REG:
-        //std::printf("RDP Reg Read DPC_STATUS_REG\n");
+        std::printf("RDP Reg Read DPC_STATUS_REG\n");
         //std::getchar();
+        value = 0x00000080;
         //std::exit(1);
         break;
     case DPC_CLOCK_REG:
@@ -67,6 +68,10 @@ std::uint32_t RDP::read(std::uint32_t reg)
         break;
     case DPS_BUFTEST_DATA_REG:
         std::printf("RDP Reg Read DPS_BUFTEST_DATA_REG\n");
+        std::exit(1);
+        break;
+    default:
+        std::printf("RDP Unknown reg\n");
         std::exit(1);
         break;
     }
@@ -124,6 +129,10 @@ void RDP::write(std::uint32_t reg, std::uint32_t value)
         break;
     case DPS_BUFTEST_DATA_REG:
         std::printf("RDP Reg Write DPS_BUFTEST_DATA_REG\n");
+        std::exit(1);
+        break;
+    default:
+        std::printf("RDP Unknown reg\n");
         std::exit(1);
         break;
     }

@@ -7,6 +7,7 @@
 #include <libnin64/Memory.h>
 #include <libnin64/PeripheralInterface.h>
 #include <libnin64/RDP.h>
+#include <libnin64/RDRAMInterface.h>
 #include <libnin64/RSP.h>
 #include <libnin64/SerialInterface.h>
 #include <libnin64/Util.h>
@@ -15,7 +16,7 @@
 using namespace libnin64;
 
 // https://raw.githubusercontent.com/mikeryan/n64dev/master/docs/n64ops/n64ops%23h.txt
-Bus::Bus(Memory& memory, Cart& cart, MIPSInterface& mi, PeripheralInterface& pi, SerialInterface& si, VideoInterface& vi, AudioInterface& ai, RSP& rsp, RDP& rdp)
+Bus::Bus(Memory& memory, Cart& cart, MIPSInterface& mi, PeripheralInterface& pi, SerialInterface& si, VideoInterface& vi, AudioInterface& ai, RDRAMInterface& ri, RSP& rsp, RDP& rdp)
 : _memory{memory}
 , _cart{cart}
 , _mi{mi}
@@ -23,6 +24,7 @@ Bus::Bus(Memory& memory, Cart& cart, MIPSInterface& mi, PeripheralInterface& pi,
 , _si{si}
 , _vi{vi}
 , _ai{ai}
+, _ri{ri}
 , _rsp{rsp}
 , _rdp{rdp}
 {
@@ -56,6 +58,8 @@ template <typename T> T Bus::read(std::uint32_t addr)
         value = T(_ai.read(addr));
     else if (addr >= 0x04600000 && addr <= 0x046fffff) // Peripheral Interface (PI) Registers
         value = T(_pi.read(addr));
+    else if (addr >= 0x04700000 && addr <= 0x047fffff) // RDRAM Interface (RI) Registers
+        value = T(_ri.read(addr));
     else if (addr >= 0x04800000 && addr <= 0x048fffff) // Serial Interface (SI) Registers
         value = T(_si.read(addr));
     else if (addr >= 0x10000000 && addr <= 0x1fbfffff) // Cart Domain 1 Address 2
@@ -98,6 +102,8 @@ template <typename T> void Bus::write(std::uint32_t addr, T value)
         _ai.write(addr, (std::uint32_t)value);
     else if (addr >= 0x04600000 && addr <= 0x046fffff) // Peripheral Interface (PI) Registers
         _pi.write(addr, (std::uint32_t)value);
+    else if (addr >= 0x04700000 && addr <= 0x047fffff) // RDRAM Interface (RI) Registers
+        _ri.write(addr, (std::uint32_t)value);
     else if (addr >= 0x04800000 && addr <= 0x048fffff) // Serial Interface (SI) Registers
         _si.write(addr, (std::uint32_t)value);
     else if (addr >= 0x1fc007c0 && addr <= 0x1fc007ff) // PIF RAM

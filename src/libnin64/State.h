@@ -10,6 +10,7 @@
 #include <libnin64/NonCopyable.h>
 #include <libnin64/PeripheralInterface.h>
 #include <libnin64/RDP.h>
+#include <libnin64/RDRAMInterface.h>
 #include <libnin64/RSP.h>
 #include <libnin64/SerialInterface.h>
 #include <libnin64/VideoInterface.h>
@@ -32,6 +33,7 @@ public:
     SerialInterface     si;
     VideoInterface      vi;
     AudioInterface      ai;
+    RDRAMInterface      ri;
     RDP                 rdp;
     RSP                 rsp;
     Bus                 bus;

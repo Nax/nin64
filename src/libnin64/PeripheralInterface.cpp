@@ -101,6 +101,7 @@ void PeripheralInterface::write(std::uint32_t reg, std::uint32_t value)
         break;
     case PI_RD_LEN_REG:
         std::puts("WRITE :: PI_RD_LEN_REG");
+        _mi.setInterrupt(MI_INTR_PI);
         break;
     case PI_WR_LEN_REG:
         std::puts("WRITE :: PI_WR_LEN_REG");

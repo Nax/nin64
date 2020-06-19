@@ -14,13 +14,14 @@ class PeripheralInterface;
 class SerialInterface;
 class VideoInterface;
 class AudioInterface;
+class RDRAMInterface;
 class RSP;
 class RDP;
 
 class Bus : private NonCopyable
 {
 public:
-    Bus(Memory& memory, Cart& cart, MIPSInterface& mi, PeripheralInterface& pi, SerialInterface& si, VideoInterface& vi, AudioInterface& ai, RSP& rsp, RDP& rdp);
+    Bus(Memory& memory, Cart& cart, MIPSInterface& mi, PeripheralInterface& pi, SerialInterface& si, VideoInterface& vi, AudioInterface& ai, RDRAMInterface& ri, RSP& rsp, RDP& rdp);
 
     template <typename T> T    read(std::uint32_t addr);
     template <typename T> void write(std::uint32_t addr, T value);
@@ -43,6 +44,7 @@ private:
     SerialInterface&     _si;
     VideoInterface&      _vi;
     AudioInterface&      _ai;
+    RDRAMInterface&      _ri;
     RSP&                 _rsp;
     RDP&                 _rdp;
 };

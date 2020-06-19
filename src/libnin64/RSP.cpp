@@ -7,6 +7,8 @@
 #include <libnin64/RSP.h>
 #include <libnin64/Util.h>
 
+bool gDebug = false;
+
 #define SP_MEM_ADDR_REG  0x04040000
 #define SP_DRAM_ADDR_REG 0x04040004
 #define SP_RD_LEN_REG    0x04040008
@@ -188,7 +190,24 @@ void RSP::tick()
 
     if (_halt) return;
 
-    op      = swap(*(std::uint32_t*)(_memory.spImem + (_pc & 0xfff)));
+    op = swap(*(std::uint32_t*)(_memory.spImem + (_pc & 0xfff)));
+
+    if (gDebug)
+    {
+        std::printf("%s:%d PC: 0x%04x Debug: OP:%02o RS:%02o RT:%02o RD:%02o %02o %02o FUNC:%02x\n",
+                    __FILE__,
+                    __LINE__,
+                    _pc,
+                    (op >> 26),
+                    ((op >> 21) & 0x1f),
+                    ((op >> 16) & 0x1f),
+                    ((op >> 11) & 0x1f),
+                    ((op >> 06) & 0x1f),
+                    ((op >> 00) & 0x3f),
+                    FUNC);
+        std::getchar();
+    }
+
     _pc     = _pcNext;
     _pcNext = _pcNext + 4;
 
@@ -223,7 +242,7 @@ void RSP::tick()
             _regs[RD].u32 = (_pc + 4) & 0xfff;
             break;
         case 015: // BREAK (Halt the RSP)
-            //std::printf("RSP BREAK\n");
+            std::printf("RSP BREAK\n");
             _halt  = true;
             _broke = true;
             if (_interruptOnBreak)
@@ -764,43 +783,56 @@ std::uint32_t RSP::read(std::uint32_t reg)
     switch (reg)
     {
     case SP_MEM_ADDR_REG:
+        std::printf("SP Read: SP_MEM_ADDR_REG");
         value = _spAddr;
         break;
     case SP_DRAM_ADDR_REG:
+        std::printf("SP Read: SP_DRAM_ADDR_REG");
         value = _dramAddr;
         break;
     case SP_RD_LEN_REG:
+        std::printf("SP Read: SP_RD_LEN_REG");
         std::puts("READ::SP_RD_LEN_REG NOT IMPLEMENTED");
         exit(42);
         break;
     case SP_WR_LEN_REG:
+        std::printf("SP Read: SP_WR_LEN_REG");
         std::puts("READ::SP_WR_LEN_REG NOT IMPLEMENTED");
         exit(42);
         break;
     case SP_STATUS_REG:
+        std::printf("SP Read: SP_STATUS_REG");
         if (_halt) value |= 0x00000001;
         if (_broke) value |= 0x00000002;
         if (_interruptOnBreak) value |= 0x00000040;
         value |= ((std::uint32_t)_signal << 7);
         break;
     case SP_DMA_FULL_REG:
+        std::printf("SP Read: SP_DMA_FULL_REG");
         break;
     case SP_DMA_BUSY_REG:
+        std::printf("SP Read: SP_DMA_BUSY_REG");
         break;
     case SP_SEMAPHORE_REG:
+        std::printf("SP Read: SP_SEMAPHORE_REG");
         if (_semaphore) value |= 0x01;
         _semaphore = true;
         break;
     case SP_PC_REG:
+        std::printf("SP Read: SP_PC_REG");
         value = _pc;
         break;
     case SP_IBIST_REG:
+        std::printf("SP Read: SP_IBIST_REG");
         std::puts("READ::SP_IBIST_REG NOT IMPLEMENTED");
         exit(42);
         break;
     default:
+        std::printf("TOO BAD\n");
         break;
     }
+
+    std::printf(": 0x%08x\n", value);
 
     return value;
 }
@@ -810,22 +842,27 @@ void RSP::write(std::uint32_t reg, std::uint32_t value)
     switch (reg)
     {
     case SP_MEM_ADDR_REG:
+        std::printf("SP Write: SP_MEM_ADDR_REG: 0x%08x\n", value);
         _spAddr = value & 0x1fff;
         break;
     case SP_DRAM_ADDR_REG:
+        std::printf("SP Write: SP_DRAM_ADDR_REG: 0x%08x\n", value);
         _dramAddr = value & 0xffffff;
         break;
     case SP_RD_LEN_REG:
+        std::printf("SP Write: SP_RD_LEN_REG: 0x%08x\n", value);
         dmaRead((value & 0xfff) + 1, ((value >> 12) & 0xff) + 1, value >> 20);
         break;
     case SP_WR_LEN_REG:
+        std::printf("SP Write: SP_WR_LEN_REG: 0x%08x\n", value);
         dmaWrite((value & 0xfff) + 1, ((value >> 12) & 0xff) + 1, value >> 20);
         break;
     case SP_STATUS_REG:
+        std::printf("SP Write: SP_STATUS_REG: 0x%08x\n", value);
         if (value & 0x00000001)
         {
             _halt = false;
-            //std::printf("RSP START!!!\n");
+            std::printf("RSP START!!!\n");
         }
         if (value & 0x00000002) _halt = true;
         if (value & 0x00000004) _broke = false;
@@ -851,21 +888,26 @@ void RSP::write(std::uint32_t reg, std::uint32_t value)
         if (value & 0x01000000) _signal |= 0x80;
         break;
     case SP_DMA_FULL_REG:
+        std::printf("SP Write: SP_DMA_FULL_REG: 0x%08x\n", value);
         std::puts("WRITE::SP_DMA_FULL_REG NOT IMPLEMENTED");
         exit(42);
         break;
     case SP_DMA_BUSY_REG:
+        std::printf("SP Write: SP_DMA_BUSY_REG: 0x%08x\n", value);
         std::puts("WRITE::SP_DMA_BUSY_REG NOT IMPLEMENTED");
         exit(42);
         break;
     case SP_SEMAPHORE_REG:
+        std::printf("SP Write: SP_SEMAPHORE_REG: 0x%08x\n", value);
         _semaphore = false;
         break;
     case SP_PC_REG:
+        std::printf("SP Write: SP_PC_REG: 0x%08x\n", value);
         _pc     = (value & 0xfff);
         _pcNext = (_pc + 4) & 0xfff;
         break;
     case SP_IBIST_REG:
+        std::printf("SP Write: SP_IBIST_REG: 0x%08x\n", value);
         std::puts("WRITE::SP_IBIST_REG NOT IMPLEMENTED");
         exit(42);
         break;
@@ -946,6 +988,8 @@ std::uint32_t RSP::cop0Read(std::uint8_t reg)
 {
     std::uint32_t value{};
 
+    std::printf("RSP COP0 READ\n");
+
     switch (reg)
     {
     case 0:
@@ -983,6 +1027,7 @@ std::uint32_t RSP::cop0Read(std::uint8_t reg)
         break;
     case 11:
         value = _rdp.read(DPC_STATUS_REG);
+        //gDebug = true;
         break;
     case 12:
         value = _rdp.read(DPC_CLOCK_REG);
@@ -1003,6 +1048,8 @@ std::uint32_t RSP::cop0Read(std::uint8_t reg)
 
 void RSP::cop0Write(std::uint8_t reg, std::uint32_t value)
 {
+    std::printf("RSP COP0 WRITE\n");
+
     switch (reg)
     {
     case 0:

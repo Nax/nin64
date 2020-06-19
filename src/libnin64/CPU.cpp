@@ -36,17 +36,19 @@
 #define FCR_REVISION 0
 #define FCR_CONTROL  31
 
-#define NOT_IMPLEMENTED()                                                                         \
-    {                                                                                             \
-        std::printf("PC: 0x%016llx Not implemented: OP:%02o RS:%02o RT:%02o RD:%02o %02o %02o\n", \
-                    _pc,                                                                          \
-                    (op >> 26),                                                                   \
-                    ((op >> 21) & 0x1f),                                                          \
-                    ((op >> 16) & 0x1f),                                                          \
-                    ((op >> 11) & 0x1f),                                                          \
-                    ((op >> 06) & 0x1f),                                                          \
-                    ((op >> 00) & 0x3f));                                                         \
-        exit(1);                                                                                  \
+#define NOT_IMPLEMENTED()                                                                                \
+    {                                                                                                    \
+        std::printf("%s:%d: PC: 0x%016llx Not implemented: OP:%02o RS:%02o RT:%02o RD:%02o %02o %02o\n", \
+                    __FILE__,                                                                            \
+                    __LINE__,                                                                            \
+                    _pc,                                                                                 \
+                    (op >> 26),                                                                          \
+                    ((op >> 21) & 0x1f),                                                                 \
+                    ((op >> 16) & 0x1f),                                                                 \
+                    ((op >> 11) & 0x1f),                                                                 \
+                    ((op >> 06) & 0x1f),                                                                 \
+                    ((op >> 00) & 0x3f));                                                                \
+        exit(1);                                                                                         \
     }
 
 #define RS          ((std::uint8_t)((op >> 21) & 0x1f))
@@ -235,6 +237,11 @@ void CPU::tick()
 
     if (_ie && !_erl && !_exl && (_im & (_ip | _mi.ip())))
     {
+        if (_ip & _im & INT_TIMER)
+        {
+            std::printf("CLOCK INTERRUPT\n");
+            std::getchar();
+        }
         _bd          = _branchDelay;
         _branchDelay = false;
         _exl         = true;
@@ -274,7 +281,7 @@ void CPU::tick()
             _regs[RD].i64 = (std::int32_t)((_regs[RT].u32 >> (_regs[RS].u8 & 0x1f)) & 0xffffffff);
             break;
         case 007: // SRAV (Shift Right Arithmetic Variable)
-            NOT_IMPLEMENTED();
+            _regs[RD].i64 = (std::int32_t)((_regs[RT].i32 >> (_regs[RS].u8 & 0x1f)) & 0xffffffff);
             break;
         case 010: // JR (Jump Register)
             _pcNext = _regs[RS].u64;
@@ -376,16 +383,16 @@ void CPU::tick()
             _regs[RD].u64 = !!(_regs[RS].u64 < _regs[RT].u64);
             break;
         case 054: // DADD
-            NOT_IMPLEMENTED();
+            _regs[RD].i64 = _regs[RS].i64 + _regs[RT].i64;
             break;
         case 055: // DADDU
-            NOT_IMPLEMENTED();
+            _regs[RD].i64 = _regs[RS].i64 + _regs[RT].i64;
             break;
         case 056: // DSUB
-            NOT_IMPLEMENTED();
+            _regs[RD].i64 = _regs[RS].i64 - _regs[RT].i64;
             break;
         case 057: // DSUBU
-            NOT_IMPLEMENTED();
+            _regs[RD].i64 = _regs[RS].i64 - _regs[RT].i64;
             break;
         case 060: // TGE
             NOT_IMPLEMENTED();
@@ -692,15 +699,47 @@ void CPU::tick()
             switch (RT)
             {
             case 000: // BCF
+                if (!_fpCompare)
+                {
+                    _pcNext      = _pc + ((std::int64_t)SIMM << 2);
+                    _branchDelay = true;
+                }
                 break;
             case 001: // BCT
+                if (_fpCompare)
+                {
+                    _pcNext      = _pc + ((std::int64_t)SIMM << 2);
+                    _branchDelay = true;
+                }
                 break;
             case 002: // BCFL
+                if (!_fpCompare)
+                {
+                    _pcNext      = _pc + ((std::int64_t)SIMM << 2);
+                    _branchDelay = true;
+                }
+                else
+                {
+                    _pc = _pcNext;
+                    _pcNext += 4;
+                }
                 break;
             case 003: // BCTL
+                if (_fpCompare)
+                {
+                    _pcNext      = _pc + ((std::int64_t)SIMM << 2);
+                    _branchDelay = true;
+                }
+                else
+                {
+                    _pc = _pcNext;
+                    _pcNext += 4;
+                }
+                break;
+            default:
+                NOT_IMPLEMENTED();
                 break;
             }
-            NOT_IMPLEMENTED();
             break;
         case 020:
         case 021:
@@ -1147,6 +1186,7 @@ void CPU::tick()
     case 042: // LWL (Load Word Left)
         tmp  = _regs[RS].u32 + SIMM;
         tmp2 = _bus.read32(tmp & ~0x3);
+
         switch (tmp & 0x3)
         {
         case 0x00:
@@ -1175,6 +1215,7 @@ void CPU::tick()
     case 046: // LWR
         tmp  = _regs[RS].u32 + SIMM;
         tmp2 = _bus.read32(tmp & ~0x3);
+
         switch (tmp & 0x3)
         {
         case 0x00:
@@ -1226,35 +1267,7 @@ void CPU::tick()
         NOT_IMPLEMENTED();
         break;
     case 055: // SDR (Store Doubleword Right)
-        tmp  = _regs[RS].u64 + SIMM;
-        tmp2 = _bus.read64(tmp & 0xfffffff8); // Mask the offset
-        switch (tmp & 0x7)
-        {
-        case 0x0:
-            _bus.write64((tmp & 0xfffffff8), (_regs[RT].u64 << 56) | (tmp2 & 0x00ffffffffffffffull));
-            break;
-        case 0x1:
-            _bus.write64((tmp & 0xfffffff8), (_regs[RT].u64 << 48) | (tmp2 & 0x0000ffffffffffffull));
-            break;
-        case 0x2:
-            _bus.write64((tmp & 0xfffffff8), (_regs[RT].u64 << 40) | (tmp2 & 0x000000ffffffffffull));
-            break;
-        case 0x3:
-            _bus.write64((tmp & 0xfffffff8), (_regs[RT].u64 << 32) | (tmp2 & 0x00000000ffffffffull));
-            break;
-        case 0x4:
-            _bus.write64((tmp & 0xfffffff8), (_regs[RT].u64 << 24) | (tmp2 & 0x0000000000ffffffull));
-            break;
-        case 0x5:
-            _bus.write64((tmp & 0xfffffff8), (_regs[RT].u64 << 16) | (tmp2 & 0x000000000000ffffull));
-            break;
-        case 0x6:
-            _bus.write64((tmp & 0xfffffff8), (_regs[RT].u64 << 8) | (tmp2 & 0x00000000000000ffull));
-            break;
-        case 0x7:
-            _bus.write64((tmp & 0xfffffff8), _regs[RT].u64);
-            break;
-        }
+        NOT_IMPLEMENTED();
         break;
     case 056: // SWR (Store Word Right)
         tmp  = _regs[RS].u32 + SIMM;
@@ -1328,11 +1341,11 @@ void CPU::tick()
     }
 
     _regs[0].u64 = 0;
-    _count++;
-    if (_count == _compare)
+    if ((_count >> 1) == _compare)
     {
         _ip |= INT_TIMER;
     }
+    _count++;
 }
 
 #define COP0_NOT_IMPLEMENTED(w)                                                        \
@@ -1466,6 +1479,8 @@ void CPU::cop0Write(std::uint8_t reg, std::uint32_t value)
         break;
     case COP0_REG_COUNT:
         _count = value;
+        std::printf("COUNT WRITE: 0x%08x\n", value);
+        std::getchar();
         break;
     case COP0_REG_ENTRYHI:
         // COP0_NOT_IMPLEMENTED(true);
@@ -1473,6 +1488,8 @@ void CPU::cop0Write(std::uint8_t reg, std::uint32_t value)
     case COP0_REG_COMPARE:
         _compare = value;
         _ip &= ~INT_TIMER;
+        std::printf("COMPARE WRITE: 0x%08x\n", value);
+        std::getchar();
         break;
     case COP0_REG_SR:
         //std::getchar();
