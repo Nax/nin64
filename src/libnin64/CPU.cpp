@@ -661,11 +661,13 @@ void CPU::tick()
                 {
                     _pc  = (std::int64_t)((std::int32_t)_errorEpc);
                     _erl = false;
+                    std::printf("ERET: ErrorEPC\n");
                 }
                 else
                 {
                     _pc  = (std::int64_t)((std::int32_t)_epc);
                     _exl = false;
+                    std::printf("ERET: EPC\n");
                 }
                 _llBit  = false;
                 _pcNext = _pc + 4;
@@ -1341,11 +1343,11 @@ void CPU::tick()
     }
 
     _regs[0].u64 = 0;
+    _count++;
     if ((_count >> 1) == _compare)
     {
         _ip |= INT_TIMER;
     }
-    _count++;
 }
 
 #define COP0_NOT_IMPLEMENTED(w)                                                        \
@@ -1361,84 +1363,110 @@ std::uint32_t CPU::cop0Read(std::uint8_t reg)
     switch (reg)
     {
     case COP0_REG_INDEX:
+        std::printf("COP0 Read: COP0_REG_INDEX\n");
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_RANDOM:
+        std::printf("COP0 Read: COP0_REG_RANDOM\n");
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_ENTRYLO0:
+        std::printf("COP0 Read: COP0_REG_ENTRYLO0\n");
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_ENTRYLO1:
+        std::printf("COP0 Read: COP0_REG_ENTRYLO1\n");
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_CONTEXT:
+        std::printf("COP0 Read: COP0_REG_CONTEXT\n");
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_PAGEMASK:
+        std::printf("COP0 Read: COP0_REG_PAGEMASK\n");
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_WIRED:
+        std::printf("COP0 Read: COP0_REG_WIRED\n");
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_BADVADDR:
+        std::printf("COP0 Read: COP0_REG_BADVADDR\n");
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_COUNT:
-        value = _count;
+        std::printf("COP0 Read: COP0_REG_COUNT\n");
+        value = (_count >> 1);
         break;
     case COP0_REG_ENTRYHI:
+        std::printf("COP0 Read: COP0_REG_ENTRYHI\n");
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_COMPARE:
+        std::printf("COP0 Read: COP0_REG_COMPARE\n");
         value = _compare;
         break;
     case COP0_REG_SR:
+        std::printf("COP0 Read: COP0_REG_SR\n");
         if (_ie) value |= 0x00000001;
         if (_exl) value |= 0x00000002;
         if (_erl) value |= 0x00000004;
         if (_fr) value |= 0x04000000;
         value |= ((std::uint32_t)_im << 8);
+        value |= 0x30000000;
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_CAUSE:
+        std::printf("COP0 Read: COP0_REG_CAUSE\n");
         value |= (std::uint32_t)(_ip | _mi.ip()) << 8;
         if (_bd) value |= 0x80000000;
         break;
     case COP0_REG_EPC:
+        std::printf("COP0 Read: COP0_REG_EPC\n");
         value = _epc;
         break;
     case COP0_REG_PRID:
+        std::printf("COP0 Read: COP0_REG_PRID\n");
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_CONFIG:
+        std::printf("COP0 Read: COP0_REG_CONFIG\n");
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_LLADDR:
+        std::printf("COP0 Read: COP0_REG_LLADDR\n");
         value = _llAddr;
         break;
     case COP0_REG_WATCHLO:
+        std::printf("COP0 Read: COP0_REG_WATCHLO\n");
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_WATCHHI:
+        std::printf("COP0 Read: COP0_REG_WATCHHI\n");
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_XCONTEXT:
+        std::printf("COP0 Read: COP0_REG_XCONTEXT\n");
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_PERR:
+        std::printf("COP0 Read: COP0_REG_PERR\n");
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_CACHEERR:
+        std::printf("COP0 Read: COP0_REG_CACHEERR\n");
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_TAGLO:
+        std::printf("COP0 Read: COP0_REG_TAGLO\n");
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_TAGHI:
+        std::printf("COP0 Read: COP0_REG_TAGHI\n");
         // COP0_NOT_IMPLEMENTED(false);
         break;
     case COP0_REG_ERROREPC:
+        std::printf("COP0 Read: COP0_REG_ERROREPC\n");
         value = _errorEpc;
         break;
     default:
@@ -1454,44 +1482,56 @@ void CPU::cop0Write(std::uint8_t reg, std::uint32_t value)
     switch (reg)
     {
     case COP0_REG_INDEX:
+        std::printf("COP0 Write: COP0_REG_INDEX 0x%08x\n", value);
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_RANDOM:
+        std::printf("COP0 Write: COP0_REG_RANDOM 0x%08x\n", value);
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_ENTRYLO0:
+        std::printf("COP0 Write: COP0_REG_ENTRYLO0 0x%08x\n", value);
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_ENTRYLO1:
+        std::printf("COP0 Write: COP0_REG_ENTRYLO1 0x%08x\n", value);
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_CONTEXT:
+        std::printf("COP0 Write: COP0_REG_CONTEXT 0x%08x\n", value);
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_PAGEMASK:
+        std::printf("COP0 Write: COP0_REG_PAGEMASK 0x%08x\n", value);
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_WIRED:
+        std::printf("COP0 Write: COP0_REG_WIRED 0x%08x\n", value);
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_BADVADDR:
+        std::printf("COP0 Write: COP0_REG_BADVADDR 0x%08x\n", value);
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_COUNT:
-        _count = value;
+        std::printf("COP0 Write: COP0_REG_COUNT 0x%08x\n", value);
+        _count = (value << 1);
         std::printf("COUNT WRITE: 0x%08x\n", value);
         std::getchar();
         break;
     case COP0_REG_ENTRYHI:
+        std::printf("COP0 Write: COP0_REG_ENTRYHI 0x%08x\n", value);
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_COMPARE:
+        std::printf("COP0 Write: COP0_REG_COMPARE 0x%08x\n", value);
         _compare = value;
         _ip &= ~INT_TIMER;
         std::printf("COMPARE WRITE: 0x%08x\n", value);
         std::getchar();
         break;
     case COP0_REG_SR:
+        std::printf("COP0 Write: COP0_REG_SR 0x%08x\n", value);
         //std::getchar();
         _ie  = !!(value & 0x00000001);
         _exl = !!(value & 0x00000002);
@@ -1500,42 +1540,55 @@ void CPU::cop0Write(std::uint8_t reg, std::uint32_t value)
         _im  = (value >> 8) & 0xff;
         break;
     case COP0_REG_CAUSE:
+        std::printf("COP0 Write: COP0_REG_CAUSE 0x%08x\n", value);
         _ip = (_ip & 0xfc) | ((value >> 8) & 0x03);
         break;
     case COP0_REG_EPC:
+        std::printf("COP0 Write: COP0_REG_EPC 0x%08x\n", value);
         _epc = value;
         break;
     case COP0_REG_PRID:
+        std::printf("COP0 Write: COP0_REG_PRID 0x%08x\n", value);
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_CONFIG:
+        std::printf("COP0 Write: COP0_REG_CONFIG 0x%08x\n", value);
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_LLADDR:
+        std::printf("COP0 Write: COP0_REG_LLADDR 0x%08x\n", value);
         _llAddr = value;
         break;
     case COP0_REG_WATCHLO:
+        std::printf("COP0 Write: COP0_REG_WATCHLO 0x%08x\n", value);
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_WATCHHI:
+        std::printf("COP0 Write: COP0_REG_WATCHHI 0x%08x\n", value);
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_XCONTEXT:
+        std::printf("COP0 Write: COP0_REG_XCONTEXT 0x%08x\n", value);
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_PERR:
+        std::printf("COP0 Write: COP0_REG_PERR 0x%08x\n", value);
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_CACHEERR:
+        std::printf("COP0 Write: COP0_REG_CACHEERR 0x%08x\n", value);
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_TAGLO:
+        std::printf("COP0 Write: COP0_REG_TAGLO 0x%08x\n", value);
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_TAGHI:
+        std::printf("COP0 Write: COP0_REG_TAGHI 0x%08x\n", value);
         // COP0_NOT_IMPLEMENTED(true);
         break;
     case COP0_REG_ERROREPC:
+        std::printf("COP0 Write: COP0_REG_ERROREPC 0x%08x\n", value);
         _errorEpc = value;
         break;
     }

@@ -30,14 +30,18 @@ std::uint32_t MIPSInterface::read(std::uint32_t reg)
     switch (reg)
     {
     case MI_INIT_MODE_REG:
+        std::printf("MI Read: MI_INIT_MODE_REG\n");
         break;
     case MI_VERSION_REG:
+        std::printf("MI Read: MI_VERSION_REG\n");
         value = 0x01010101;
         break;
     case MI_INTR_REG:
+        std::printf("MI Read: MI_INTR_REG\n");
         value = _interrupts;
         break;
     case MI_INTR_MASK_REG:
+        std::printf("MI Read: MI_INTR_MASK_REG\n");
         value = _interruptsMask;
         break;
     }
@@ -50,14 +54,18 @@ void MIPSInterface::write(std::uint32_t reg, std::uint32_t value)
     switch (reg)
     {
     case MI_INIT_MODE_REG:
+        std::printf("MI Write: MI_INIT_MODE_REG 0x%08x\n", value);
         break;
     case MI_VERSION_REG:
+        std::printf("MI Write: MI_VERSION_REG 0x%08x\n", value);
         /* No-op */
         break;
     case MI_INTR_REG:
+        std::printf("MI Write: MI_INTR_REG 0x%08x\n", value);
         /* No-op */
         break;
     case MI_INTR_MASK_REG:
+        std::printf("MI Write: MI_INTR_MASK_REG 0x%08x\n", value);
         // No handling of metastable input (https://en.wikibooks.org/wiki/Digital_Circuits/Latches#SR_latch)
         // SP (Clear/Set)
         if (value & (1 << 0)) _interruptsMask &= ~MI_INTR_SP;
@@ -71,7 +79,6 @@ void MIPSInterface::write(std::uint32_t reg, std::uint32_t value)
         // VI (Clear/Set)
         if (value & (1 << 6)) _interruptsMask &= ~MI_INTR_VI;
         if (value & (1 << 7)) _interruptsMask |= MI_INTR_VI;
-        // PI (Clear/Set)
         if (value & (1 << 8)) _interruptsMask &= ~MI_INTR_PI;
         if (value & (1 << 9)) _interruptsMask |= MI_INTR_PI;
         // DP (Clear/Set)
