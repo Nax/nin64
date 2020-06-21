@@ -12,8 +12,8 @@
 namespace libnin64
 {
 
-template <typename T> inline static std::uint64_t zext(T value) { return static_cast<std::make_unsigned<T>::type>(value); }
-template <typename T> inline static std::uint64_t sext(T value) { return static_cast<std::uint64_t>(static_cast<std::int64_t>(static_cast<std::make_signed<T>::type>(value))); }
+template <typename T> inline static std::uint64_t zext(T value) { return static_cast<typename std::make_unsigned<T>::type>(value); }
+template <typename T> inline static std::uint64_t sext(T value) { return static_cast<std::uint64_t>(static_cast<std::int64_t>(static_cast<typename std::make_signed<T>::type>(value))); }
 
 inline static void mul128(std::int64_t a, std::int64_t b, std::int64_t* lo, std::int64_t* hi)
 {
