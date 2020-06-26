@@ -820,7 +820,7 @@ std::uint32_t RSP::read(std::uint32_t reg)
         break;
     case SP_PC_REG:
         std::printf("SP Read: SP_PC_REG");
-        value = _pc;
+        value = _pc | 0x1000;
         break;
     case SP_IBIST_REG:
         std::printf("SP Read: SP_IBIST_REG");
@@ -921,7 +921,7 @@ void RSP::dmaRead(std::uint16_t length, std::uint16_t count, std::uint16_t skip)
     std::uint8_t* src;
     std::uint8_t* dst;
 
-    //std::printf("SP DMA (Read)!  SPADDR:0x%04x ADDR:0x%08x L:0x%04x C:0x%04x S:0x%04x\n", _spAddr, _dramAddr, length, count, skip);
+    std::printf("SP DMA (Read)!  SPADDR:0x%04x ADDR:0x%08x L:0x%04x C:0x%04x S:0x%04x\n", _spAddr, _dramAddr, length, count, skip);
 
     src = _memory.ram + _dramAddr;
 
@@ -948,7 +948,7 @@ void RSP::dmaWrite(std::uint16_t length, std::uint16_t count, std::uint16_t skip
     std::uint8_t* src;
     std::uint8_t* dst;
 
-    //std::printf("SP DMA (Write)! SPADDR:0x%04x ADDR:0x%08x L:0x%04x C:0x%04x S:0x%04x\n", _spAddr, _dramAddr, length, count, skip);
+    std::printf("SP DMA (Write)! SPADDR:0x%04x ADDR:0x%08x L:0x%04x C:0x%04x S:0x%04x\n", _spAddr, _dramAddr, length, count, skip);
 
     dst = _memory.ram + _dramAddr;
 

@@ -107,7 +107,10 @@ template <typename T> void Bus::write(std::uint32_t addr, T value)
     else if (addr >= 0x04800000 && addr <= 0x048fffff) // Serial Interface (SI) Registers
         _si.write(addr, (std::uint32_t)value);
     else if (addr >= 0x1fc007c0 && addr <= 0x1fc007ff) // PIF RAM
+    {
         *(T*)(_memory.pif + (addr & 0x3f)) = swap(value);
+        _si.pifUpdate();
+    }
     else
     {
         std::printf("WARN: Write: Accessing not mapped memory zone: 0x%08x.\n", addr);

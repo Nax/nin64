@@ -22,6 +22,9 @@ using namespace libnin64;
 VideoInterface::VideoInterface(MIPSInterface& mi)
 : _mi{mi}
 , _sync{}
+, _acc{}
+, _scanline{}
+, _scanlineSync{}
 {
 }
 
@@ -49,15 +52,18 @@ std::uint32_t VideoInterface::read(std::uint32_t reg)
         break;
     case VI_ORIGIN_REG:
         std::printf("VI Read: VI_ORIGIN_REG\n");
+        value = _origin;
         break;
     case VI_WIDTH_REG:
         std::printf("VI Read: VI_WIDTH_REG\n");
         break;
     case VI_INTR_REG:
         std::printf("VI Read: VI_INTR_REG\n");
+        value = _scanlineSync;
         break;
     case VI_CURRENT_REG:
-        std::printf("VI Read: VI_CURRENT_REG\n");
+        //std::printf("VI Read: VI_CURRENT_REG\n");
+        value = _scanline;
         break;
     case VI_BURST_REG:
         std::printf("VI Read: VI_BURST_REG\n");
@@ -103,12 +109,14 @@ void VideoInterface::write(std::uint32_t reg, std::uint32_t value)
         break;
     case VI_ORIGIN_REG:
         std::printf("VI Write: VI_ORIGIN_REG: 0x%08x\n", value);
+        _origin = value & 0xffffff;
         break;
     case VI_WIDTH_REG:
         std::printf("VI Write: VI_WIDTH_REG: 0x%08x\n", value);
         break;
     case VI_INTR_REG:
         std::printf("VI Write: VI_INTR_REG: 0x%08x\n", value);
+        _scanlineSync = value;
         break;
     case VI_CURRENT_REG:
         _mi.clearInterrupt(MI_INTR_VI);
@@ -144,5 +152,21 @@ void VideoInterface::write(std::uint32_t reg, std::uint32_t value)
         break;
     default:
         break;
+    }
+}
+
+void VideoInterface::tick(std::size_t count)
+{
+    static constexpr const std::size_t kScanlineSync = 93750000 / 30 / 525;
+
+    _acc += count;
+    while (_acc >= kScanlineSync)
+    {
+        _acc -= kScanlineSync;
+        _scanline++;
+        if (_scanline == 525)
+            _scanline = 0;
+        if (_scanline == _scanlineSync)
+            _mi.setInterrupt(MI_INTR_VI);
     }
 }

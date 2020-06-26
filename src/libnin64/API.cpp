@@ -41,9 +41,10 @@ NIN64_API Nin64Err nin64RunFrame(Nin64State* state)
         state->cpu.tick(32);
         state->rsp.tick(24);
         state->ai.tick(32);
+        state->vi.tick(32);
     }
     std::printf("PC:0x%016llx\n", state->cpu.pc());
-    state->vi.setVBlank();
+    //state->vi.setVBlank();
     return NIN64_OK;
 }
 

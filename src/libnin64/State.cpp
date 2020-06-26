@@ -7,7 +7,7 @@ State::State()
 , memory{}
 , mi{}
 , pi{mi, memory, cart}
-, si{mi}
+, si{mi, memory}
 , vi{mi}
 , ai{mi, memory}
 , ri{}
