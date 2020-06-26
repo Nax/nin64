@@ -159,6 +159,25 @@ RSP::~RSP()
 {
 }
 
+void RSP::init(CIC cic)
+{
+    switch (cic)
+    {
+    case CIC::NUS_6105:
+        *(std::uint32_t*)(_memory.spImem + 0x00) = swap32(0x3c0dbfc0);
+        *(std::uint32_t*)(_memory.spImem + 0x04) = swap32(0x8da807fc);
+        *(std::uint32_t*)(_memory.spImem + 0x08) = swap32(0x25ad07c0);
+        *(std::uint32_t*)(_memory.spImem + 0x0c) = swap32(0x31080080);
+        *(std::uint32_t*)(_memory.spImem + 0x10) = swap32(0x5500fffc);
+        *(std::uint32_t*)(_memory.spImem + 0x14) = swap32(0x3c0dbfc0);
+        *(std::uint32_t*)(_memory.spImem + 0x18) = swap32(0x8da80024);
+        *(std::uint32_t*)(_memory.spImem + 0x1c) = swap32(0x3c0bb000);
+        break;
+    default:
+        break;
+    }
+}
+
 void RSP::tick(std::size_t count)
 {
     if (_halt) return;
@@ -205,7 +224,7 @@ void RSP::tick()
                     ((op >> 06) & 0x1f),
                     ((op >> 00) & 0x3f),
                     FUNC);
-        }
+    }
 
     _pc     = _pcNext;
     _pcNext = _pcNext + 4;

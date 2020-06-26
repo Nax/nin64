@@ -204,6 +204,7 @@ void CPU::init(CIC cic)
         _regs[15].u64 = 0x0000000018b63d28;
         _regs[22].u64 = 0x0000000000000078;
         _regs[25].u64 = 0xffffffff825b21c9;
+        break;
     case CIC::NUS_6105:
         _regs[1].u64  = 0x0000000000000000;
         _regs[2].u64  = 0xfffffffff58b0fbf;

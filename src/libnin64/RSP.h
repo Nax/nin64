@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <libnin64/CIC.h>
 #include <libnin64/NonCopyable.h>
 
 #if defined(_MSC_VER)
@@ -23,6 +24,7 @@ public:
     RSP(Memory& memory, MIPSInterface& mi, RDP& rdp);
     ~RSP();
 
+    void init(CIC cic);
     void tick(std::size_t count);
     void tick();
 
@@ -30,7 +32,8 @@ public:
     void          write(std::uint32_t reg, std::uint32_t value);
 
 private:
-    union Reg {
+    union Reg
+    {
         std::uint8_t  u8;
         std::int8_t   i8;
         std::uint16_t u16;
@@ -39,7 +42,8 @@ private:
         std::int32_t  i32;
     };
 
-    union VReg {
+    union VReg
+    {
         __m128i i;
     };
 
