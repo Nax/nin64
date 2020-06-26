@@ -205,8 +205,7 @@ void RSP::tick()
                     ((op >> 06) & 0x1f),
                     ((op >> 00) & 0x3f),
                     FUNC);
-        std::getchar();
-    }
+        }
 
     _pc     = _pcNext;
     _pcNext = _pcNext + 4;

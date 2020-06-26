@@ -34,7 +34,7 @@ std::uint32_t RDP::read(std::uint32_t reg)
         break;
     case DPC_STATUS_REG:
         std::printf("RDP Reg Read DPC_STATUS_REG\n");
-        //std::getchar();
+        //
         value = 0x00000080;
         //std::exit(1);
         break;

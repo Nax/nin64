@@ -237,11 +237,6 @@ void CPU::tick()
 
     if (_ie && !_erl && !_exl && (_im & (_ip | _mi.ip())))
     {
-        if (_ip & _im & INT_TIMER)
-        {
-            std::printf("CLOCK INTERRUPT\n");
-            std::getchar();
-        }
         _bd          = _branchDelay;
         _branchDelay = false;
         _exl         = true;
@@ -1148,6 +1143,7 @@ void CPU::tick()
         NOT_IMPLEMENTED();
         break;
     case 033: // LDR (Load Doubleword Right)
+        std::printf("LDR\n");
         tmp  = _regs[RS].u64 + SIMM;
         tmp2 = _bus.read64(tmp & 0xfffffff8); // Mask the offset
         switch (tmp & 0x7)
@@ -1186,7 +1182,8 @@ void CPU::tick()
         _regs[RT].u64 = sext(_bus.read16(_regs[RS].u32 + SIMM));
         break;
     case 042: // LWL (Load Word Left)
-        tmp  = _regs[RS].u32 + SIMM;
+        tmp = _regs[RS].u32 + SIMM;
+        std::printf("LWL 0x%08x (0x%016llx)\n", (uint32_t)tmp, _pc);
         tmp2 = _bus.read32(tmp & ~0x3);
 
         switch (tmp & 0x3)
@@ -1215,7 +1212,8 @@ void CPU::tick()
         _regs[RT].u64 = _bus.read16(_regs[RS].u32 + SIMM);
         break;
     case 046: // LWR
-        tmp  = _regs[RS].u32 + SIMM;
+        tmp = _regs[RS].u32 + SIMM;
+        std::printf("LWR 0x%08x (0x%016llx)\n", (uint32_t)tmp, _pc);
         tmp2 = _bus.read32(tmp & ~0x3);
 
         switch (tmp & 0x3)
@@ -1244,7 +1242,8 @@ void CPU::tick()
         _bus.write16(_regs[RS].u32 + SIMM, _regs[RT].u16);
         break;
     case 052: // SWL (Store Word Left)
-        tmp  = _regs[RS].u32 + SIMM;
+        tmp = _regs[RS].u32 + SIMM;
+        std::printf("SWL 0x%08x (0x%016llx)\n", (uint32_t)tmp, _pc);
         tmp2 = _bus.read32(tmp & ~0x3);
         switch (tmp & 0x3)
         {
@@ -1272,7 +1271,8 @@ void CPU::tick()
         NOT_IMPLEMENTED();
         break;
     case 056: // SWR (Store Word Right)
-        tmp  = _regs[RS].u32 + SIMM;
+        tmp = _regs[RS].u32 + SIMM;
+        std::printf("SWR 0x%08x (0x%016llx)\n", (uint32_t)tmp, _pc);
         tmp2 = _bus.read32(tmp & ~0x3);
         switch (tmp & 0x3)
         {
@@ -1517,7 +1517,7 @@ void CPU::cop0Write(std::uint8_t reg, std::uint32_t value)
         std::printf("COP0 Write: COP0_REG_COUNT 0x%08x\n", value);
         _count = (value << 1);
         std::printf("COUNT WRITE: 0x%08x\n", value);
-        std::getchar();
+
         break;
     case COP0_REG_ENTRYHI:
         std::printf("COP0 Write: COP0_REG_ENTRYHI 0x%08x\n", value);
@@ -1528,11 +1528,9 @@ void CPU::cop0Write(std::uint8_t reg, std::uint32_t value)
         _compare = value;
         _ip &= ~INT_TIMER;
         std::printf("COMPARE WRITE: 0x%08x\n", value);
-        std::getchar();
         break;
     case COP0_REG_SR:
         std::printf("COP0 Write: COP0_REG_SR 0x%08x\n", value);
-        //std::getchar();
         _ie  = !!(value & 0x00000001);
         _exl = !!(value & 0x00000002);
         _erl = !!(value & 0x00000004);
