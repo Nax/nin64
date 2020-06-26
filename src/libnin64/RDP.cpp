@@ -21,58 +21,57 @@ std::uint32_t RDP::read(std::uint32_t reg)
     switch (reg)
     {
     case DPC_START_REG:
-        std::printf("RDP Reg Read DPC_START_REG\n");
-        std::exit(1);
+        std::printf("DP Read: DPC_START_REG\n");
+        //std::exit(1);
         break;
     case DPC_END_REG:
-        std::printf("RDP Reg Read DPC_END_REG\n");
-        std::exit(1);
+        std::printf("DP Read: DPC_END_REG\n");
+        //std::exit(1);
         break;
     case DPC_CURRENT_REG:
-        std::printf("RDP Reg Read DPC_CURRENT_REG\n");
-        std::exit(1);
+        std::printf("DP Read: DPC_CURRENT_REG\n");
+        //std::exit(1);
         break;
     case DPC_STATUS_REG:
-        std::printf("RDP Reg Read DPC_STATUS_REG\n");
-        //
+        std::printf("DP Read: DPC_STATUS_REG\n");
         value = 0x00000080;
         //std::exit(1);
         break;
     case DPC_CLOCK_REG:
-        std::printf("RDP Reg Read DPC_CLOCK_REG\n");
-        std::exit(1);
+        std::printf("DP Read: DPC_CLOCK_REG\n");
+        //std::exit(1);
         break;
     case DPC_BUFBUSY_REG:
-        std::printf("RDP Reg Read DPC_BUFBUSY_REG\n");
-        std::exit(1);
+        std::printf("DP Read: DPC_BUFBUSY_REG\n");
+        //std::exit(1);
         break;
     case DPC_PIPEBUSY_REG:
-        std::printf("RDP Reg Read DPC_PIPEBUSY_REG\n");
-        std::exit(1);
+        std::printf("DP Read: DPC_PIPEBUSY_REG\n");
+        //std::exit(1);
         break;
     case DPC_TMEM_REG:
-        std::printf("RDP Reg Read DPC_TMEM_REG\n");
-        std::exit(1);
+        std::printf("DP Read: DPC_TMEM_REG\n");
+        //std::exit(1);
         break;
     case DPS_TBIST_REG:
-        std::printf("RDP Reg Read DPS_TBIST_REG\n");
-        std::exit(1);
+        std::printf("DP Read: DPS_TBIST_REG\n");
+        //std::exit(1);
         break;
     case DPS_TEST_MODE_REG:
-        std::printf("RDP Reg Read DPS_TEST_MODE_REG\n");
-        std::exit(1);
+        std::printf("DP Read: DPS_TEST_MODE_REG\n");
+        //std::exit(1);
         break;
     case DPS_BUFTEST_ADDR_REG:
-        std::printf("RDP Reg Read DPS_BUFTEST_ADDR_REG\n");
-        std::exit(1);
+        std::printf("DP Read: DPS_BUFTEST_ADDR_REG\n");
+        //std::exit(1);
         break;
     case DPS_BUFTEST_DATA_REG:
-        std::printf("RDP Reg Read DPS_BUFTEST_DATA_REG\n");
-        std::exit(1);
+        std::printf("DP Read: DPS_BUFTEST_DATA_REG\n");
+        //std::exit(1);
         break;
     default:
         std::printf("RDP Unknown reg\n");
-        std::exit(1);
+        //std::exit(1);
         break;
     }
 
@@ -84,51 +83,51 @@ void RDP::write(std::uint32_t reg, std::uint32_t value)
     switch (reg)
     {
     case DPC_START_REG:
-        std::printf("RDP Reg Write DPC_START_REG\n");
+        std::printf("DP Write DPC_START_REG: %08x\n", value);
         std::exit(1);
         break;
     case DPC_END_REG:
-        std::printf("RDP Reg Write DPC_END_REG\n");
+        std::printf("DP Write DPC_END_REG: %08x\n", value);
         std::exit(1);
         break;
     case DPC_CURRENT_REG:
-        std::printf("RDP Reg Write DPC_CURRENT_REG\n");
+        std::printf("DP Write DPC_CURRENT_REG: %08x\n", value);
         std::exit(1);
         break;
     case DPC_STATUS_REG:
-        std::printf("RDP Reg Write DPC_STATUS_REG\n");
+        std::printf("DP Write DPC_STATUS_REG: %08x\n", value);
         std::exit(1);
         break;
     case DPC_CLOCK_REG:
-        std::printf("RDP Reg Write DPC_CLOCK_REG\n");
+        std::printf("DP Write DPC_CLOCK_REG: %08x\n", value);
         std::exit(1);
         break;
     case DPC_BUFBUSY_REG:
-        std::printf("RDP Reg Write DPC_BUFBUSY_REG\n");
+        std::printf("DP Write DPC_BUFBUSY_REG: %08x\n", value);
         std::exit(1);
         break;
     case DPC_PIPEBUSY_REG:
-        std::printf("RDP Reg Write DPC_PIPEBUSY_REG\n");
+        std::printf("DP Write DPC_PIPEBUSY_REG: %08x\n", value);
         std::exit(1);
         break;
     case DPC_TMEM_REG:
-        std::printf("RDP Reg Write DPC_TMEM_REG\n");
+        std::printf("DP Write DPC_TMEM_REG: %08x\n", value);
         std::exit(1);
         break;
     case DPS_TBIST_REG:
-        std::printf("RDP Reg Write DPS_TBIST_REG\n");
+        std::printf("DP Write DPS_TBIST_REG: %08x\n", value);
         std::exit(1);
         break;
     case DPS_TEST_MODE_REG:
-        std::printf("RDP Reg Write DPS_TEST_MODE_REG\n");
+        std::printf("DP Write DPS_TEST_MODE_REG: %08x\n", value);
         std::exit(1);
         break;
     case DPS_BUFTEST_ADDR_REG:
-        std::printf("RDP Reg Write DPS_BUFTEST_ADDR_REG\n");
+        std::printf("DP Write DPS_BUFTEST_ADDR_REG: %08x\n", value);
         std::exit(1);
         break;
     case DPS_BUFTEST_DATA_REG:
-        std::printf("RDP Reg Write DPS_BUFTEST_DATA_REG\n");
+        std::printf("DP Write DPS_BUFTEST_DATA_REG: %08x\n", value);
         std::exit(1);
         break;
     default:
