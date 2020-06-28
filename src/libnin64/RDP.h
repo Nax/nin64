@@ -31,10 +31,16 @@ public:
 
     std::uint32_t read(std::uint32_t reg);
     void          write(std::uint32_t reg, std::uint32_t value);
+    void          dma();
 
 private:
     Memory&        _memory;
     MIPSInterface& _mi;
+
+    std::uint32_t _cmdStart;
+    std::uint32_t _cmdEnd;
+    std::uint32_t _cmdCurrent;
+    bool          _xbus : 1;
 };
 
 } // namespace libnin64

@@ -55,6 +55,7 @@ void MIPSInterface::write(std::uint32_t reg, std::uint32_t value)
     {
     case MI_INIT_MODE_REG:
         std::printf("MI Write: MI_INIT_MODE_REG 0x%08x\n", value);
+        if (value & (1 << 11)) clearInterrupt(MI_INTR_DP);
         break;
     case MI_VERSION_REG:
         std::printf("MI Write: MI_VERSION_REG 0x%08x\n", value);

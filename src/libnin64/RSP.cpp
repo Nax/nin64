@@ -7,6 +7,8 @@
 #include <libnin64/RSP.h>
 #include <libnin64/Util.h>
 
+// http://ultra64.ca/files/documentation/silicon-graphics/SGI_Nintendo_64_RSP_Programmers_Guide.pdf
+
 bool gDebug = false;
 
 #define SP_MEM_ADDR_REG  0x04040000
@@ -458,26 +460,32 @@ void RSP::tick()
 
                 _vregs[VD].i = vClampSigned(_acc_md, _acc_hi);
                 break;
-            case 0b000001:
+            case 0b000001: // VMULU
                 NOT_IMPLEMENTED();
                 break;
-            case 0b000010:
+            case 0b000010: // VRNDP
                 NOT_IMPLEMENTED();
                 break;
-            case 0b000011:
+            case 0b000011: // VMULQ
                 NOT_IMPLEMENTED();
                 break;
-            case 0b000100:
+            case 0b000100: // VMUDL
                 NOT_IMPLEMENTED();
                 break;
-            case 0b000101:
+            case 0b000101: // VMUDM
                 NOT_IMPLEMENTED();
                 break;
-            case 0b000110:
+            case 0b000110: // VMUDN
                 NOT_IMPLEMENTED();
                 break;
-            case 0b000111:
-                NOT_IMPLEMENTED();
+            case 0b000111: // VMUDH
+                va = vSelect(_vregs[VT].i, E);
+                vb = _vregs[VS].i;
+
+                _acc_lo = _mm_setzero_si128();
+                _acc_md = _mm_mulhi_epi16(va, vb);
+
+                _vregs[VD].i = vClampSigned(_acc_md, _acc_hi);
                 break;
             case 0b001000: // VMACF
                 va = vSelect(_vregs[VT].i, E);
@@ -494,169 +502,120 @@ void RSP::tick()
 
                 _vregs[VD].i = vClampSigned(_acc_md, _acc_hi);
                 break;
-            case 0b001001:
+            case 0b001001: // VMACU
                 NOT_IMPLEMENTED();
                 break;
-            case 0b001010:
+            case 0b001010: // VRNDN
                 NOT_IMPLEMENTED();
                 break;
-            case 0b001011:
+            case 0b001011: // VMACQ
                 NOT_IMPLEMENTED();
                 break;
-            case 0b001100:
+            case 0b001100: // VMADL
+                va = vSelect(_vregs[VT].i, E);
+                vb = _vregs[VS].i;
+
+                _acc_md = _mm_add_epi16(_acc_md, _mm_mulhi_epi16(va, vb));
+
+                _vregs[VD].i = vClampSigned(_acc_lo, vClampSigned(_acc_md, _acc_hi));
+                break;
+            case 0b001101: // VMADM
+                va = vSelect(_vregs[VT].i, E);
+                vb = _vregs[VS].i;
+
+                // TODO: Add low acc too!
+                _acc_md = _mm_add_epi16(_acc_md, _mm_mulhi_epi16(va, vb));
+
+                _vregs[VD].i = vClampSigned(_acc_md, _acc_hi);
+                break;
+            case 0b001110: // VMADN
                 NOT_IMPLEMENTED();
                 break;
-            case 0b001101:
+            case 0b001111: // VMADH
                 NOT_IMPLEMENTED();
                 break;
-            case 0b001110:
+            case 0b010000: // VADD
                 NOT_IMPLEMENTED();
                 break;
-            case 0b001111:
+            case 0b010001: // VSUB
                 NOT_IMPLEMENTED();
                 break;
-            case 0b010000:
+            case 0b010011: // VABS
                 NOT_IMPLEMENTED();
                 break;
-            case 0b010001:
+            case 0b010100: // VADDC
                 NOT_IMPLEMENTED();
                 break;
-            case 0b010010:
+            case 0b010101: // VSUBC
                 NOT_IMPLEMENTED();
                 break;
-            case 0b010011:
+            case 0b011101: // VSAR
                 NOT_IMPLEMENTED();
                 break;
-            case 0b010100:
+            case 0b100000: // VLT
                 NOT_IMPLEMENTED();
                 break;
-            case 0b010101:
+            case 0b100001: // VEQ
                 NOT_IMPLEMENTED();
                 break;
-            case 0b010110:
+            case 0b100010: // VNE
                 NOT_IMPLEMENTED();
                 break;
-            case 0b010111:
+            case 0b100011: // VGE
                 NOT_IMPLEMENTED();
                 break;
-            case 0b011000:
+            case 0b100100: // VCL
                 NOT_IMPLEMENTED();
                 break;
-            case 0b011001:
+            case 0b100101: // VCH
                 NOT_IMPLEMENTED();
                 break;
-            case 0b011010:
+            case 0b100110: // VCR
                 NOT_IMPLEMENTED();
                 break;
-            case 0b011011:
+            case 0b100111: // VMRG
                 NOT_IMPLEMENTED();
                 break;
-            case 0b011100:
+            case 0b101000: // VAND
                 NOT_IMPLEMENTED();
                 break;
-            case 0b011101:
+            case 0b101001: // VNAND
                 NOT_IMPLEMENTED();
                 break;
-            case 0b011110:
+            case 0b101010: // VOR
                 NOT_IMPLEMENTED();
                 break;
-            case 0b011111:
+            case 0b101011: // VNOR
                 NOT_IMPLEMENTED();
                 break;
-            case 0b100000:
+            case 0b101100: // VXOR
                 NOT_IMPLEMENTED();
                 break;
-            case 0b100001:
+            case 0b101101: // VNXOR
                 NOT_IMPLEMENTED();
                 break;
-            case 0b100010:
+            case 0b110000: // VRCP
                 NOT_IMPLEMENTED();
                 break;
-            case 0b100011:
+            case 0b110001: // VRCPL
                 NOT_IMPLEMENTED();
                 break;
-            case 0b100100:
+            case 0b110010: // VRCPH
                 NOT_IMPLEMENTED();
                 break;
-            case 0b100101:
+            case 0b110011: // VMOV
                 NOT_IMPLEMENTED();
                 break;
-            case 0b100110:
+            case 0b110100: // VRSQ
                 NOT_IMPLEMENTED();
                 break;
-            case 0b100111:
+            case 0b110101: // VRSQL
                 NOT_IMPLEMENTED();
                 break;
-            case 0b101000:
+            case 0b110110: // VRSQH
                 NOT_IMPLEMENTED();
                 break;
-            case 0b101001:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b101010:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b101011:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b101100:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b101101:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b101110:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b101111:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b110000:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b110001:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b110010:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b110011:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b110100:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b110101:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b110110:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b110111:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b111000:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b111001:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b111010:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b111011:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b111100:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b111101:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b111110:
-                NOT_IMPLEMENTED();
-                break;
-            case 0b111111:
+            case 0b110111: // VNOP
                 NOT_IMPLEMENTED();
                 break;
             default:
