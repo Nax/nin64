@@ -122,18 +122,71 @@ static __m128i vSelect(__m128i v, std::uint8_t e)
     return tmp;
 }
 
-static __m128i vClampSigned(__m128i value, __m128i hi)
-{
-    __m128i signBit;
-    __m128i clampMask;
-    __m128i clampValue;
-    __m128i negMask;
+static const __m128i kVectorHi          = _mm_set1_epi16((short)0x8000);
+static const __m128i kVectorLo          = _mm_set1_epi16((short)0x0001);
+static const __m128i kVectorSignedMin   = _mm_set1_epi16((short)0x8000);
+static const __m128i kVectorSignedMax   = _mm_set1_epi16((short)0x7fff);
+static const __m128i kVectorUnsignedMin = _mm_set1_epi16((short)0x0000);
+static const __m128i kVectorUnsignedMax = _mm_set1_epi16((short)0xffff);
 
-    signBit    = _mm_set1_epi16((short)0x8000);
-    clampMask  = _mm_cmpeq_epi16(hi, _mm_setzero_si128());
-    negMask    = _mm_cmpeq_epi16(_mm_and_si128(hi, signBit), signBit);
-    clampValue = _mm_or_si128(_mm_and_si128(negMask, _mm_set1_epi16((short)0x8000)), _mm_andnot_si128(negMask, _mm_set1_epi16((short)0x7fff)));
-    return _mm_or_si128(_mm_and_si128(clampMask, value), _mm_andnot_si128(clampMask, clampValue));
+/*
+ * Return:
+ *   0xFFFF if the highest bit is set
+ *   0x0000 otherwise
+ */
+static __m128i vSext(__m128i value)
+{
+    return _mm_cmpeq_epi16(_mm_and_si128(value, kVectorHi), kVectorHi);
+}
+
+static __m128i vMultiplex(__m128i mask, __m128i a, __m128i b)
+{
+    return _mm_or_si128(_mm_and_si128(a, mask), _mm_andnot_si128(b, mask));
+}
+
+static __m128i vClampSigned(__m128i lo, __m128i hi)
+{
+    __m128i signExtMask;
+    __m128i positive;
+    __m128i clampValue;
+
+    signExtMask = _mm_cmpeq_epi16(hi, vSext(lo));
+    positive    = _mm_cmpeq_epi16(_mm_and_si128(hi, kVectorHi), _mm_setzero_si128());
+    clampValue  = vMultiplex(positive, kVectorSignedMax, kVectorSignedMin);
+    return vMultiplex(signExtMask, lo, clampValue);
+}
+
+/* TODO: Make sure we clamp correctly */
+static __m128i vClampUnsigned(__m128i lo, __m128i hi)
+{
+    __m128i signExtMask;
+    __m128i positive;
+    __m128i clampValue;
+
+    signExtMask = _mm_cmpeq_epi16(hi, vSext(lo));
+    positive    = _mm_cmpeq_epi16(_mm_and_si128(hi, kVectorHi), _mm_setzero_si128());
+    clampValue  = vMultiplex(positive, kVectorUnsignedMax, kVectorUnsignedMin);
+    return vMultiplex(signExtMask, lo, clampValue);
+}
+
+static __m128i vAdd(__m128i a, __m128i b, __m128i* carryOut)
+{
+
+    __m128i tmp;
+
+    tmp       = _mm_add_epi16(a, b);
+    *carryOut = _mm_and_si128(_mm_cmpgt_epi16(_mm_xor_si128(a, kVectorHi), _mm_xor_si128(tmp, kVectorHi)), kVectorLo);
+    return tmp;
+}
+
+static __m128i vAddCarry(__m128i a, __m128i b, __m128i* carryInOut)
+{
+
+    __m128i tmp;
+
+    tmp         = _mm_add_epi16(a, _mm_add_epi16(b, *carryInOut));
+    *carryInOut = _mm_and_si128(_mm_cmpgt_epi16(_mm_xor_si128(a, kVectorHi), _mm_xor_si128(tmp, kVectorHi)), kVectorLo);
+    return tmp;
 }
 
 /* This function computes fractional products.
@@ -156,6 +209,7 @@ static __m128i vClampSigned(__m128i value, __m128i hi)
  * => Clamp starting at b31: 0xf000
  * => Result: -0.125
  */
+template <bool accumulate, bool unsignedClamp>
 static __m128i vMultiplyFraction(__m128i a, __m128i b, __m128i* acc)
 {
     __m128i hi;
@@ -174,15 +228,34 @@ static __m128i vMultiplyFraction(__m128i a, __m128i b, __m128i* acc)
     hi = _mm_or_si128(_mm_slli_epi16(hi, 1), _mm_srli_epi16(lo, 15));
     lo = _mm_slli_epi16(lo, 1);
 
-    /* Load the accumulator */
-    acc[0] = lo;
-    acc[1] = hi;
-    acc[2] = sign;
+    if (!accumulate)
+    {
+        /* Add 32768 */
+        lo = vAdd(lo, kVectorHi, &carry);
+        hi = vAddCarry(a, b, &carry);
 
-    // TODO: Add 32768
-    // TODO: Clamp the result
+        /* Load the accumulator */
+        acc[0] = lo;
+        acc[1] = hi;
+        acc[2] = sign;
+    }
+    else
+    {
+        /* Accumulate */
+        acc[0] = vAdd(acc[0], lo, &carry);
+        acc[1] = vAddCarry(acc[1], hi, &carry);
+        acc[2] = _mm_adds_epi16(acc[2], carry);
+    }
 
-    return acc[1];
+    /* Clamp */
+    if (unsignedClamp)
+    {
+        return vClampUnsigned(acc[1], acc[2]);
+    }
+    else
+    {
+        return vClampSigned(acc[1], acc[2]);
+    }
 }
 
 RSP::RSP(Memory& memory, MIPSInterface& mi, RDP& rdp)
@@ -486,10 +559,10 @@ void RSP::tick()
             switch (FUNC)
             {
             case 0b000000: // VMULF (Vector Multiply of Signed Fractions)
-                _vregs[VD].i = vMultiplyFraction(vSelect(_vregs[VT].i, E), _vregs[VS].i, _acc);
+                _vregs[VD].i = vMultiplyFraction<false, false>(vSelect(_vregs[VT].i, E), _vregs[VS].i, _acc);
                 break;
             case 0b000001: // VMULU
-                _vregs[VD].i = vMultiplyFraction(vSelect(_vregs[VT].i, E), _vregs[VS].i, _acc);
+                _vregs[VD].i = vMultiplyFraction<false, true>(vSelect(_vregs[VT].i, E), _vregs[VS].i, _acc);
                 break;
             case 0b000010: // VRNDP
                 NOT_IMPLEMENTED();
@@ -516,22 +589,10 @@ void RSP::tick()
                 _vregs[VD].i = vClampSigned(_acc[1], _acc[2]);
                 break;
             case 0b001000: // VMACF
-                va = vSelect(_vregs[VT].i, E);
-                vb = _vregs[VS].i;
-
-                vlo    = _mm_mullo_epi16(va, vb);
-                vcarry = _mm_srli_epi16(_mm_and_si128(vlo, _mm_set1_epi16((short)0x8000)), 15);
-                vlo    = _mm_slli_epi16(vlo, 1);
-                vhi    = _mm_or_si128(_mm_slli_epi16(_mm_mulhi_epi16(va, vb), 1), vcarry);
-
-                vcarry  = _mm_srli_epi16(_mm_and_si128(_mm_and_si128(_acc[1], vlo), _mm_set1_epi16((short)0x8000)), 15);
-                _acc[1] = _mm_add_epi16(_acc[1], vlo);
-                _acc[2] = _mm_add_epi16(_mm_add_epi16(_acc[2], vhi), vcarry);
-
-                _vregs[VD].i = vClampSigned(_acc[1], _acc[2]);
+                _vregs[VD].i = vMultiplyFraction<true, false>(vSelect(_vregs[VT].i, E), _vregs[VS].i, _acc);
                 break;
             case 0b001001: // VMACU
-                NOT_IMPLEMENTED();
+                _vregs[VD].i = vMultiplyFraction<true, true>(vSelect(_vregs[VT].i, E), _vregs[VS].i, _acc);
                 break;
             case 0b001010: // VRNDN
                 NOT_IMPLEMENTED();
