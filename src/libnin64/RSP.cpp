@@ -144,7 +144,7 @@ static __m128i vMultiplex(__m128i mask, __m128i a, __m128i b)
     return _mm_or_si128(_mm_and_si128(a, mask), _mm_andnot_si128(b, mask));
 }
 
-static __m128i vClampSigned(__m128i lo, __m128i hi)
+static __m128i vClampSigned3(__m128i lo, __m128i hi, __m128i value)
 {
     __m128i signExtMask;
     __m128i positive;
@@ -153,7 +153,12 @@ static __m128i vClampSigned(__m128i lo, __m128i hi)
     signExtMask = _mm_cmpeq_epi16(hi, vSext(lo));
     positive    = _mm_cmpeq_epi16(_mm_and_si128(hi, kVectorHi), _mm_setzero_si128());
     clampValue  = vMultiplex(positive, kVectorSignedMax, kVectorSignedMin);
-    return vMultiplex(signExtMask, lo, clampValue);
+    return vMultiplex(signExtMask, value, clampValue);
+}
+
+static __m128i vClampSigned(__m128i lo, __m128i hi)
+{
+    return vClampSigned3(lo, hi, lo);
 }
 
 /* TODO: Make sure we clamp correctly */
@@ -256,6 +261,58 @@ static __m128i vMultiplyFraction(__m128i a, __m128i b, __m128i* acc)
     {
         return vClampSigned(acc[1], acc[2]);
     }
+}
+
+/* TODO: Handle sign better */
+template <bool accumulate, int slot, int resultSlot>
+static __m128i vMultiplyMixed(__m128i a, __m128i b, __m128i* acc)
+{
+    __m128i hi;
+    __m128i lo;
+    __m128i prod[3];
+    __m128i carry;
+
+    /* Multiply */
+    hi = _mm_mulhi_epi16(a, b);
+    lo = _mm_mullo_epi16(a, b);
+
+    /* Load in prod */
+    switch (slot)
+    {
+    case 0:
+        prod[0] = hi;
+        prod[1] = vSext(hi);
+        prod[2] = prod[1];
+        break;
+    case 1:
+        prod[0] = lo;
+        prod[1] = hi;
+        prod[2] = vSext(hi);
+        break;
+    case 2:
+        prod[0] = _mm_setzero_si128();
+        prod[1] = lo;
+        prod[2] = hi;
+        break;
+    }
+
+    if (!accumulate)
+    {
+        /* Store in acc */
+        acc[0] = prod[0];
+        acc[1] = prod[1];
+        acc[2] = prod[2];
+    }
+    else
+    {
+        /* Accumulate */
+        /* TODO: Add acc saturation */
+        acc[0] = vAdd(acc[0], prod[0], &carry);
+        acc[1] = vAddCarry(acc[1], prod[1], &carry);
+        acc[2] = vAddCarry(acc[2], prod[2], &carry);
+    }
+
+    return vClampSigned3(acc[1], acc[2], acc[resultSlot]);
 }
 
 RSP::RSP(Memory& memory, MIPSInterface& mi, RDP& rdp)
@@ -571,22 +628,16 @@ void RSP::tick()
                 NOT_IMPLEMENTED();
                 break;
             case 0b000100: // VMUDL
-                NOT_IMPLEMENTED();
+                _vregs[VD].i = vMultiplyMixed<false, 0, 0>(vSelect(_vregs[VT].i, E), _vregs[VS].i, _acc);
                 break;
             case 0b000101: // VMUDM
-                NOT_IMPLEMENTED();
+                _vregs[VD].i = vMultiplyMixed<false, 1, 1>(vSelect(_vregs[VT].i, E), _vregs[VS].i, _acc);
                 break;
             case 0b000110: // VMUDN
-                NOT_IMPLEMENTED();
+                _vregs[VD].i = vMultiplyMixed<false, 1, 0>(vSelect(_vregs[VT].i, E), _vregs[VS].i, _acc);
                 break;
             case 0b000111: // VMUDH
-                va = vSelect(_vregs[VT].i, E);
-                vb = _vregs[VS].i;
-
-                _acc[0] = _mm_setzero_si128();
-                _acc[1] = _mm_mulhi_epi16(va, vb);
-
-                _vregs[VD].i = vClampSigned(_acc[1], _acc[2]);
+                _vregs[VD].i = vMultiplyMixed<false, 2, 1>(vSelect(_vregs[VT].i, E), _vregs[VS].i, _acc);
                 break;
             case 0b001000: // VMACF
                 _vregs[VD].i = vMultiplyFraction<true, false>(vSelect(_vregs[VT].i, E), _vregs[VS].i, _acc);
@@ -601,27 +652,16 @@ void RSP::tick()
                 NOT_IMPLEMENTED();
                 break;
             case 0b001100: // VMADL
-                va = vSelect(_vregs[VT].i, E);
-                vb = _vregs[VS].i;
-
-                _acc[1] = _mm_add_epi16(_acc[1], _mm_mulhi_epi16(va, vb));
-
-                _vregs[VD].i = vClampSigned(_acc[0], vClampSigned(_acc[1], _acc[2]));
+                _vregs[VD].i = vMultiplyMixed<true, 0, 0>(vSelect(_vregs[VT].i, E), _vregs[VS].i, _acc);
                 break;
             case 0b001101: // VMADM
-                va = vSelect(_vregs[VT].i, E);
-                vb = _vregs[VS].i;
-
-                // TODO: Add low acc too!
-                _acc[1] = _mm_add_epi16(_acc[1], _mm_mulhi_epi16(va, vb));
-
-                _vregs[VD].i = vClampSigned(_acc[1], _acc[2]);
+                _vregs[VD].i = vMultiplyMixed<true, 1, 1>(vSelect(_vregs[VT].i, E), _vregs[VS].i, _acc);
                 break;
             case 0b001110: // VMADN
-                NOT_IMPLEMENTED();
+                _vregs[VD].i = vMultiplyMixed<true, 1, 0>(vSelect(_vregs[VT].i, E), _vregs[VS].i, _acc);
                 break;
             case 0b001111: // VMADH
-                NOT_IMPLEMENTED();
+                _vregs[VD].i = vMultiplyMixed<true, 2, 1>(vSelect(_vregs[VT].i, E), _vregs[VS].i, _acc);
                 break;
             case 0b010000: // VADD
                 NOT_IMPLEMENTED();
