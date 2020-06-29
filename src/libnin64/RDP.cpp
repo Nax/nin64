@@ -182,11 +182,14 @@ void RDP::dma()
         case 0x25: // Texture Rectangle Flip
             NOT_IMPLEMENTED();
             break;
+        case 0x26: // Unknown
+            // TODO: Is this normal?
+            break;
         case 0x27: // Sync Pipe
             // TODO: Add me
             break;
         case 0x28: // Sync Tile
-            NOT_IMPLEMENTED();
+            // TODO: Add me
             break;
         case 0x29: // Sync Full
             // TODO: Add me
@@ -217,16 +220,16 @@ void RDP::dma()
             NOT_IMPLEMENTED();
             break;
         case 0x32: // Set Tile Size
-            NOT_IMPLEMENTED();
+            // TODO: Add me
             break;
         case 0x33: // Load Block
-            NOT_IMPLEMENTED();
+            // TODO: Add me
             break;
         case 0x34: // Load Tile
             NOT_IMPLEMENTED();
             break;
         case 0x35: // Set Tile
-            NOT_IMPLEMENTED();
+            // TODO: Add me
             break;
         case 0x36: // Fill Rectangle
             // TODO: Add me
@@ -250,7 +253,7 @@ void RDP::dma()
             // TODO: Add me
             break;
         case 0x3d: // Set Texture Image
-            NOT_IMPLEMENTED();
+            // TODO: Add me
             break;
         case 0x3e: // Set Z Image
             // TODO: Add me
