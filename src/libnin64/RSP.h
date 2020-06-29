@@ -79,9 +79,7 @@ private:
     std::uint32_t _dramAddr;
     Reg           _regs[32];
     VReg          _vregs[32];
-    __m128i       _acc_lo;
-    __m128i       _acc_md;
-    __m128i       _acc_hi;
+    __m128i       _acc[3];
     std::uint16_t _pc;
     std::uint16_t _pcNext;
 };

@@ -136,6 +136,55 @@ static __m128i vClampSigned(__m128i value, __m128i hi)
     return _mm_or_si128(_mm_and_si128(clampMask, value), _mm_andnot_si128(clampMask, clampValue));
 }
 
+/* This function computes fractional products.
+ * Example:
+ * -1.0 * -1.0
+ * => 0x8000 * 0x8000
+ * => 0x40000000
+ * => Sign bit: 0
+ * => Shift Left 1: 0x80000000
+ * => Insert in Acc with sign extension: 0x000080000000
+ * => Clamp starting at b31: 0x7fff
+ * => Result: ~1.0
+ *
+ * -0.5 * 0.25
+ * => 0xc000 * 0x2000
+ * => 0xf8000000
+ * => Sign bit: 1
+ * => Shift left 1: 0xf0000000
+ * => Insert in Acc with sign extension: 0xfffff0000000
+ * => Clamp starting at b31: 0xf000
+ * => Result: -0.125
+ */
+static __m128i vMultiplyFraction(__m128i a, __m128i b, __m128i* acc)
+{
+    __m128i hi;
+    __m128i lo;
+    __m128i sign;
+    __m128i carry;
+
+    /* Multiply */
+    hi = _mm_mulhi_epi16(a, b);
+    lo = _mm_mullo_epi16(a, b);
+
+    /* Extract sign */
+    sign = _mm_cmpgt_epi16(_mm_setzero_si128(), hi);
+
+    /* Shift left one bit */
+    hi = _mm_or_si128(_mm_slli_epi16(hi, 1), _mm_srli_epi16(lo, 15));
+    lo = _mm_slli_epi16(lo, 1);
+
+    /* Load the accumulator */
+    acc[0] = lo;
+    acc[1] = hi;
+    acc[2] = sign;
+
+    // TODO: Add 32768
+    // TODO: Clamp the result
+
+    return acc[1];
+}
+
 RSP::RSP(Memory& memory, MIPSInterface& mi, RDP& rdp)
 : _memory{memory}
 , _mi{mi}
@@ -149,9 +198,7 @@ RSP::RSP(Memory& memory, MIPSInterface& mi, RDP& rdp)
 , _dramAddr{}
 , _regs{}
 , _vregs{}
-, _acc_lo{}
-, _acc_md{}
-, _acc_hi{}
+, _acc{_mm_setzero_si128(), _mm_setzero_si128(), _mm_setzero_si128()}
 , _pc{0}
 , _pcNext{4}
 {
@@ -439,29 +486,10 @@ void RSP::tick()
             switch (FUNC)
             {
             case 0b000000: // VMULF (Vector Multiply of Signed Fractions)
-                va = vSelect(_vregs[VT].i, E);
-                vb = _vregs[VS].i;
-
-                /* Multiply arguments */
-                vhi = _mm_mulhi_epi16(va, vb);
-                vlo = _mm_mullo_epi16(va, vb);
-
-                /* Insert shifted result into acc */
-                _acc_hi = _mm_or_si128(_mm_slli_epi16(vhi, 1), _mm_srli_epi16(vlo, 15));
-                _acc_md = _mm_slli_epi16(vlo, 1);
-
-                /* Add 0x8000 to the lower acc, extract carry */
-                vc      = _mm_set1_epi16((short)0x8000);
-                vcarry  = _mm_srli_epi16(_mm_and_si128(_acc_lo, vc), 15);
-                _acc_lo = _mm_add_epi16(_acc_lo, vc);
-
-                /* Add carry to the middle acc */
-                _acc_md = _mm_add_epi16(_acc_md, vcarry);
-
-                _vregs[VD].i = vClampSigned(_acc_md, _acc_hi);
+                _vregs[VD].i = vMultiplyFraction(vSelect(_vregs[VT].i, E), _vregs[VS].i, _acc);
                 break;
             case 0b000001: // VMULU
-                NOT_IMPLEMENTED();
+                _vregs[VD].i = vMultiplyFraction(vSelect(_vregs[VT].i, E), _vregs[VS].i, _acc);
                 break;
             case 0b000010: // VRNDP
                 NOT_IMPLEMENTED();
@@ -482,10 +510,10 @@ void RSP::tick()
                 va = vSelect(_vregs[VT].i, E);
                 vb = _vregs[VS].i;
 
-                _acc_lo = _mm_setzero_si128();
-                _acc_md = _mm_mulhi_epi16(va, vb);
+                _acc[0] = _mm_setzero_si128();
+                _acc[1] = _mm_mulhi_epi16(va, vb);
 
-                _vregs[VD].i = vClampSigned(_acc_md, _acc_hi);
+                _vregs[VD].i = vClampSigned(_acc[1], _acc[2]);
                 break;
             case 0b001000: // VMACF
                 va = vSelect(_vregs[VT].i, E);
@@ -496,11 +524,11 @@ void RSP::tick()
                 vlo    = _mm_slli_epi16(vlo, 1);
                 vhi    = _mm_or_si128(_mm_slli_epi16(_mm_mulhi_epi16(va, vb), 1), vcarry);
 
-                vcarry  = _mm_srli_epi16(_mm_and_si128(_mm_and_si128(_acc_md, vlo), _mm_set1_epi16((short)0x8000)), 15);
-                _acc_md = _mm_add_epi16(_acc_md, vlo);
-                _acc_hi = _mm_add_epi16(_mm_add_epi16(_acc_hi, vhi), vcarry);
+                vcarry  = _mm_srli_epi16(_mm_and_si128(_mm_and_si128(_acc[1], vlo), _mm_set1_epi16((short)0x8000)), 15);
+                _acc[1] = _mm_add_epi16(_acc[1], vlo);
+                _acc[2] = _mm_add_epi16(_mm_add_epi16(_acc[2], vhi), vcarry);
 
-                _vregs[VD].i = vClampSigned(_acc_md, _acc_hi);
+                _vregs[VD].i = vClampSigned(_acc[1], _acc[2]);
                 break;
             case 0b001001: // VMACU
                 NOT_IMPLEMENTED();
@@ -515,18 +543,18 @@ void RSP::tick()
                 va = vSelect(_vregs[VT].i, E);
                 vb = _vregs[VS].i;
 
-                _acc_md = _mm_add_epi16(_acc_md, _mm_mulhi_epi16(va, vb));
+                _acc[1] = _mm_add_epi16(_acc[1], _mm_mulhi_epi16(va, vb));
 
-                _vregs[VD].i = vClampSigned(_acc_lo, vClampSigned(_acc_md, _acc_hi));
+                _vregs[VD].i = vClampSigned(_acc[0], vClampSigned(_acc[1], _acc[2]));
                 break;
             case 0b001101: // VMADM
                 va = vSelect(_vregs[VT].i, E);
                 vb = _vregs[VS].i;
 
                 // TODO: Add low acc too!
-                _acc_md = _mm_add_epi16(_acc_md, _mm_mulhi_epi16(va, vb));
+                _acc[1] = _mm_add_epi16(_acc[1], _mm_mulhi_epi16(va, vb));
 
-                _vregs[VD].i = vClampSigned(_acc_md, _acc_hi);
+                _vregs[VD].i = vClampSigned(_acc[1], _acc[2]);
                 break;
             case 0b001110: // VMADN
                 NOT_IMPLEMENTED();
