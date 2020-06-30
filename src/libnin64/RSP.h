@@ -82,6 +82,9 @@ private:
     __m128i       _acc[3];
     std::uint16_t _pc;
     std::uint16_t _pcNext;
+    std::uint16_t _vcc;
+    std::uint16_t _vco;
+    std::uint8_t  _vce;
 };
 
 } // namespace libnin64

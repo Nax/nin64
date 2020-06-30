@@ -122,6 +122,8 @@ static __m128i vSelect(__m128i v, std::uint8_t e)
     return tmp;
 }
 
+static const __m128i kVector0           = _mm_set1_epi16((short)0x0000);
+static const __m128i kVector1           = _mm_set1_epi16((short)0xffff);
 static const __m128i kVectorHi          = _mm_set1_epi16((short)0x8000);
 static const __m128i kVectorLo          = _mm_set1_epi16((short)0x0001);
 static const __m128i kVectorSignedMin   = _mm_set1_epi16((short)0x8000);
@@ -192,6 +194,82 @@ static __m128i vAddCarry(__m128i a, __m128i b, __m128i* carryInOut)
     tmp         = _mm_add_epi16(a, _mm_add_epi16(b, *carryInOut));
     *carryInOut = _mm_and_si128(_mm_cmpgt_epi16(_mm_xor_si128(a, kVectorHi), _mm_xor_si128(tmp, kVectorHi)), kVectorLo);
     return tmp;
+}
+
+static std::uint8_t vExtract(__m128i v)
+{
+    std::uint16_t raw[8];
+    std::uint8_t  tmp{};
+
+    _mm_store_si128((__m128i*)raw, v);
+    for (int i = 0; i < 8; ++i)
+    {
+        if (raw[i] & 1)
+            tmp |= (1 << i);
+    }
+    return tmp;
+}
+
+static __m128i vUnextract(std::uint8_t v)
+{
+    std::uint16_t raw[8];
+
+    for (int i = 0; i < 8; ++i)
+    {
+        raw[i] = (v & (1 << i)) ? 0xffff : 0x0000;
+    }
+
+    return _mm_load_si128((__m128i*)raw);
+}
+
+/* TODO: Implement low correctly */
+template <bool low>
+static __m128i vClip(__m128i vs, __m128i vt, __m128i* acc, std::uint16_t* vcc, std::uint16_t* vco, std::uint8_t* vce)
+{
+    __m128i vtNeg;
+    __m128i min;
+    __m128i max;
+    __m128i value;
+    __m128i ge;
+    __m128i le;
+    __m128i neq;
+    __m128i sign;
+    __m128i ce;
+
+    vtNeg = _mm_mullo_epi16(vt, kVector1);
+    min   = _mm_min_epi16(vt, vtNeg);
+    max   = _mm_max_epi16(vt, vtNeg);
+
+    value = vs;
+    value = _mm_min_epi16(_mm_max_epi16(value, min), max);
+    ge    = _mm_cmpeq_epi16(value, max);
+    le    = _mm_cmpeq_epi16(value, min);
+
+    if (!low)
+    {
+        neq  = _mm_xor_si128(_mm_or_si128(_mm_cmpeq_epi16(vs, vt), _mm_cmpeq_epi16(vs, vtNeg)), kVector1);
+        sign = _mm_cmpgt_epi16(_mm_setzero_si128(), _mm_xor_si128(vs, vt));
+        ce   = _mm_cmpeq_epi16(_mm_add_epi16(vs, vt), kVector1);
+    }
+
+    acc[0] = value;
+    acc[1] = vSext(value);
+    acc[2] = acc[1];
+
+    if (!low)
+    {
+        *vcc = (((std::uint16_t)vExtract(ge)) << 8) | vExtract(le);
+        *vco = (((std::uint16_t)vExtract(neq)) << 8) | vExtract(sign);
+        *vce = vExtract(ce);
+    }
+    else
+    {
+        *vcc = 0;
+        *vco = 0;
+        *vce = 0;
+    }
+
+    return value;
 }
 
 /* This function computes fractional products.
@@ -331,6 +409,9 @@ RSP::RSP(Memory& memory, MIPSInterface& mi, RDP& rdp)
 , _acc{_mm_setzero_si128(), _mm_setzero_si128(), _mm_setzero_si128()}
 , _pc{0}
 , _pcNext{4}
+, _vcc{}
+, _vco{}
+, _vce{}
 {
 }
 
@@ -584,7 +665,21 @@ void RSP::tick()
             NOT_IMPLEMENTED();
             break;
         case 002: // CFC2
-            NOT_IMPLEMENTED();
+            switch (RD)
+            {
+            case 0:
+                _regs[RT].u32 = _vco;
+                break;
+            case 1:
+                _regs[RT].u32 = _vcc;
+                break;
+            case 2:
+                _regs[RT].u32 = _vce;
+                break;
+            default:
+                _regs[RT].u32 = 0;
+                break;
+            }
             break;
         case 004: // MTC2
             _mm_store_si128((__m128i*)vtmp, _vregs[RD].i);
@@ -694,10 +789,10 @@ void RSP::tick()
                 NOT_IMPLEMENTED();
                 break;
             case 0b100100: // VCL
-                NOT_IMPLEMENTED();
+                _vregs[VD].i = vClip<true>(_vregs[VS].i, vSelect(_vregs[VT].i, E), _acc, &_vcc, &_vco, &_vce);
                 break;
             case 0b100101: // VCH
-                NOT_IMPLEMENTED();
+                _vregs[VD].i = vClip<false>(_vregs[VS].i, vSelect(_vregs[VT].i, E), _acc, &_vcc, &_vco, &_vce);
                 break;
             case 0b100110: // VCR
                 NOT_IMPLEMENTED();
