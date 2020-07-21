@@ -759,7 +759,11 @@ void RSP::tick()
                 _vregs[VD].i = vMultiplyMixed<true, 2, 1>(vSelect(_vregs[VT].i, E), _vregs[VS].i, _acc);
                 break;
             case 0b010000: // VADD
-                NOT_IMPLEMENTED();
+                /* TODO: Add carry */
+                _acc[0] = _mm_add_epi16(vSelect(_vregs[VT].i, E), _vregs[VS].i);
+                _acc[1] = vSext(_acc[0]);
+                _acc[2] = _acc[1];
+                _vco    = 0;
                 break;
             case 0b010001: // VSUB
                 NOT_IMPLEMENTED();
